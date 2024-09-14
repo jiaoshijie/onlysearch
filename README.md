@@ -13,3 +13,7 @@ WARN: This plugin doesn't privode replace functionality!
   + [ ] also support append a single line result to quickfix and arglist
   + [ ] And support append all results in a single file to quickfix and arglist
   + [ ] only make replace operation using quickfix replace operation like `cdo`
+
+### License
+
+**MIT**
