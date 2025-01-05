@@ -14,21 +14,23 @@ local coll = {
 coll.__index = coll
 
 local set_option = function(winid, bufnr)
+    local win_opt = { scope = "local", win = winid }
+    local buf_opt = { buf = bufnr }
   -- window options --
-  vim.api.nvim_win_set_option(winid, 'number', false)
-  vim.api.nvim_win_set_option(winid, 'relativenumber', false)
-  vim.api.nvim_win_set_option(winid, 'winfixwidth', true)
-  vim.api.nvim_win_set_option(winid, 'wrap', false)
-  vim.api.nvim_win_set_option(winid, 'spell', false)
-  vim.api.nvim_win_set_option(winid, 'cursorline', true)
-  vim.api.nvim_win_set_option(winid, 'signcolumn', 'no')
-  vim.api.nvim_win_set_option(winid, 'colorcolumn', '0')
+  vim.api.nvim_set_option_value('number', false, win_opt)
+  vim.api.nvim_set_option_value('relativenumber', false, win_opt)
+  vim.api.nvim_set_option_value('winfixwidth', true, win_opt)
+  vim.api.nvim_set_option_value('wrap', false, win_opt)
+  vim.api.nvim_set_option_value('spell', false, win_opt)
+  vim.api.nvim_set_option_value('cursorline', true, win_opt)
+  vim.api.nvim_set_option_value('signcolumn', 'no', win_opt)
+  vim.api.nvim_set_option_value('colorcolumn', '0', win_opt)
   -- buf options --
-  vim.api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe') -- NOTE: or 'delete'
-  vim.api.nvim_buf_set_option(bufnr, 'buflisted', false)
-  vim.api.nvim_buf_set_option(bufnr, 'buftype', 'nowrite')
-  vim.api.nvim_buf_set_option(bufnr, 'swapfile', false)
-  vim.api.nvim_buf_set_option(bufnr, 'filetype', 'nofile')
+  vim.api.nvim_set_option_value('bufhidden', 'wipe', buf_opt) -- NOTE: or 'delete'
+  vim.api.nvim_set_option_value('buflisted', false, buf_opt)
+  vim.api.nvim_set_option_value('buftype', 'nowrite', buf_opt)
+  vim.api.nvim_set_option_value('swapfile', false, buf_opt)
+  vim.api.nvim_set_option_value('filetype', 'nofile', buf_opt)
 end
 
 local buf_delete = function(bufnr)
@@ -85,10 +87,10 @@ function coll:open()
 
     self.ui_lines_number = ui:render_header(self.bufnr, self.config.engine)
 
-    local group = vim.api.nvim_create_augroup("Undotree_collector", { clear = true })
+    local os_group = vim.api.nvim_create_augroup("Undotree_collector", { clear = true })
     vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
         buffer = self.bufnr,
-        group = group,
+        group = os_group,
         callback = function()
             self.winid = nil
             self.bufnr = nil
@@ -96,13 +98,48 @@ function coll:open()
     })
     vim.api.nvim_create_autocmd("InsertLeave", {
         buffer = self.bufnr,
-        group = group,
-        callback = function() action.search(self) end,
+        group = os_group,
+        callback = function() action.on_insert_leave(self) end,
+    })
+    vim.api.nvim_create_autocmd("InsertEnter", {
+        buffer = self.bufnr,
+        group = os_group,
+        callback = function() action.on_insert_enter(self) end,
+    })
+    self.prev_backspace = vim.api.nvim_get_option_value('backspace', { scope = "global" })
+    vim.api.nvim_create_autocmd({ 'InsertEnter', 'CursorMovedI' }, {
+        buffer = self.bufnr,
+        group = os_group,
+        callback = function()
+            vim.opt.backspace = "indent,start"
+            if not action.is_editable(self) then
+                vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
+            end
+        end,
+    })
+    vim.api.nvim_create_autocmd("WinLeave", {
+        buffer = self.bufnr,
+        group = os_group,
+        callback = function()
+            vim.opt.backspace = self.prev_backspace
+        end
     })
 
-    vim.keymap.set("n", "<cr>", function() action.select_entry(self) end, {
-        noremap = true, silent = true, buffer = self.bufnr
-    })
+    local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
+    -- NOTE: disable
+    vim.keymap.set('n', 'd', '<nop>', map_opts)
+    vim.keymap.set('n', 'u', '<nop>', map_opts)
+    vim.keymap.set('n', '<C-r>', '<nop>', map_opts)
+    vim.keymap.set('n', 'o', 'ji', map_opts)
+    vim.keymap.set('n', 'O', 'ki', map_opts)
+    vim.keymap.set('n', 'C', '<nop>', map_opts)
+    vim.keymap.set('n', 'c', '<nop>', map_opts)
+    vim.keymap.set('n', 's', '<nop>', map_opts)
+    -- vim.keymap.set('n', 'S', '<nop>', map_opts)
+    vim.keymap.set('i', '<Cr>', '<nop>', map_opts)
+    vim.keymap.set('i', '<C-j>', '<C-[>', map_opts)
+    -- NOTE: action map
+    vim.keymap.set("n", "<cr>", function() action.select_entry(self) end, map_opts)
 end
 
 function coll:close()

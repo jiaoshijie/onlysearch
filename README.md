@@ -2,7 +2,7 @@
 
 A nvim plugin that provides a beautiful search result views and powerful functionality(using ripgrep).
 
-WARN: This plugin doesn't privode replace functionality!
+WARN: This plugin doesn't provide replace functionality!
 
 - [x] support search tool `ripgrep` and `grep`, maybe `gg`
 - [x] support file filter
@@ -13,8 +13,10 @@ WARN: This plugin doesn't privode replace functionality!
   + [ ] also support append a single line result to quickfix and arglist
   + [ ] And support append all results in a single file to quickfix and arglist
   + [ ] only make replace operation using quickfix replace operation like `cdo`
-- [ ] result protect methods
+- [x] result protect methods
+- [ ] handle long line
 - [ ] fold support
+- [ ] history(at least can resume last one)
 
 ### License
 

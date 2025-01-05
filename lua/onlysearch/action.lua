@@ -54,6 +54,10 @@ local gen_abs_path = function(cwd, filename)
     return vim.fn.fnameescape(abs_path)
 end
 
+action.is_editable = function(coll)
+    return vim.fn.line('.') <= coll.ui_lines_number
+end
+
 action.search = function(coll)
     if not coll.finder then
         local finder_gen = search.setup(coll.config.engine)
@@ -69,7 +73,7 @@ action.search = function(coll)
     query.flags = vim.fn.trim(lines[3])
     query.filters = vim.fn.trim(lines[4])
 
-    if #query.text > 0 then
+    if #query.text > 2 then
         coll.finder:search(query)
     end
 end
@@ -82,6 +86,20 @@ action.select_entry = function(coll)
             local abs_path = gen_abs_path(coll.target_winid, entry.f)
             open_file(coll.target_winid, abs_path, entry.l)
         end
+    end
+end
+
+action.on_insert_enter = function(coll)
+    if not action.is_editable(coll) then
+        local key = vim.api.nvim_replace_termcodes('<esc>', true, false, true)
+        vim.api.nvim_feedkeys(key, 'm', true)
+        print("WARNING: You can't make changes in results.")
+    end
+end
+
+action.on_insert_leave = function(coll)
+    if action.is_editable(coll) then
+        action.search(coll)
     end
 end
 

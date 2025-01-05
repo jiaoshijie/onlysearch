@@ -29,7 +29,7 @@ base.__index = base
 -- end
 
 base.parse_filters = function(_, _)
-    vim.api.nvim_out_write("WARNING: filters not supported, will search without filters\n")
+    print("WARNING: filters not supported, will search without filters")
 end
 
 ---@desc: Start a search job
@@ -72,7 +72,7 @@ function base:search(query)
         on_stderr = function(_, data) self:on_stderr(data) end,
         on_exit = function(_, data) self:on_exit(data) end,
     })
-    self.job:sync()
+    self.job:start()
 end
 
 ---@desc: Stop a not finished search job:
