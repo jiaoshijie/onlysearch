@@ -1,4 +1,5 @@
 local job = require('plenary.job')
+local utils = require('onlysearch.utils')
 
 ---@interface
 local _M = {}
@@ -7,44 +8,6 @@ local base = {
     not_first_error = nil,
 }
 base.__index = base
-
----Scan a path string and split it into multiple paths.
----@param s_path string
----@return string[]
-local scan_paths = function(s_path)
-    local paths = {}
-    local path = ''
-    local escape_char = '\\'
-
-    local i = 1
-    while i <= #s_path do
-        local char = s_path:sub(i, i)
-        if char == escape_char then
-            -- Escape next character
-            if i < #s_path then
-                i = i + 1
-                path = path .. s_path:sub(i, i)
-            end
-        elseif char:match('%s') then
-            -- Unescaped whitespace: split here.
-            if path ~= '' then
-                table.insert(paths, path)
-            end
-            path = ''
-            i = i + s_path:sub(i, -1):match('^%s+()') - 2
-        else
-            path = path .. char
-        end
-
-        i = i + 1
-    end
-
-    if #path > 0 then
-        table.insert(paths, path)
-    end
-
-    return paths
-end
 
 ---@desc: extract the search tool output to standard format
 ---       this function should be implemented by all the child class
@@ -65,6 +28,10 @@ end
 --     -- NOTE: finders implement their own parse_output
 -- end
 
+base.parse_filters = function(_, _)
+    vim.api.nvim_out_write("WARNING: filters not supported, will search without filters\n")
+end
+
 ---@desc: Start a search job
 ---@param query table { text="", paths="", flags="", filters="", cwd="" }
 function base:search(query)
@@ -77,18 +44,16 @@ function base:search(query)
         end
     end
     -- 2. add filter
-    if query.filters and #query.filters >0 then
-        local filters = scan_paths(query.filters)
-        for _, filter in ipairs(filters) do
-            table.insert(args, '--glob=' .. filter)
-        end
+    if query.filters and #query.filters > 0 then
+        self.parse_filters(args, query.filters)
     end
+
     table.insert(args, "--")
     -- 3. add query text
     table.insert(args, query.text)
     -- 4. add path
     if query.paths and #query.paths > 0 then
-        local paths = scan_paths(query.paths)
+        local paths = utils.scan_paths(query.paths)
         for _, dir in ipairs(paths) do
             table.insert(args, dir)
         end
@@ -173,7 +138,7 @@ _M.setup = function(key)
         print("onlysearch: " .. key .. " not supported, using grep search instead")
         finder = require("onlysearch.search.grep")  -- TODO: maybe just quit, ui render need after this init
     end
-    finder.name = key
+    -- finder.name = key
 
     return base:setup(finder)
 end

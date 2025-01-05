@@ -1,3 +1,5 @@
+local utils = require('onlysearch.utils')
+
 -- ripgrep tool
 -- https://github.com/BurntSushi/ripgrep
 
@@ -40,6 +42,15 @@ rg.parse_output = function(data)
     end
 
     return { p = p, c = c, l = l, subm = subm }
+end
+
+rg.parse_filters = function(args, filters)
+    if filters and #filters > 0 then
+        filters = utils.scan_paths(filters)
+        for _, filter in ipairs(filters) do
+            table.insert(args, '--glob=' .. filter)
+        end
+    end
 end
 
 return rg

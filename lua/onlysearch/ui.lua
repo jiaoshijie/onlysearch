@@ -32,7 +32,7 @@ local ui = {
     }
 }
 
-ui.render_header = function(self, bufnr)
+ui.render_header = function(self, bufnr, name)
     if not self.vt.ns_id then
         self.vt.ns_id = vim.api.nvim_create_namespace("onlysearch_vt_ns")
     end
@@ -49,6 +49,9 @@ ui.render_header = function(self, bufnr)
     local header_count = 0
     for _, v in pairs(self.vt.header) do
         header_count = header_count + 1
+        if v.lnum == 2 and name then  -- NOTE: `extra flags` virtual text line number
+            v.text = "Extra Flags(" .. name .. "):"
+        end
         vim.api.nvim_buf_set_extmark(bufnr, self.vt.ns_id, v.lnum, 0, {
             virt_lines = { { { v.text, v.hl } } },
             virt_lines_leftcol = true,

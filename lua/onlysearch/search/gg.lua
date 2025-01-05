@@ -65,11 +65,13 @@ end
 gg.on_stdout = function(self, value)
     pcall(vim.schedule_wrap(function()
         local ts = self.parse_output(value)
-        if ts then
+        if type(ts) == "table" then
             local t = { p = ts.p }
             for _, val in ipairs(ts.m) do
                 self.handler.on_result(vim.tbl_extend('force', t, val))
             end
+        elseif type(ts) == "string" then
+            self.handler.on_result(value)
         end
     end))
 end

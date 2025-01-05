@@ -70,7 +70,7 @@ end
 
 function coll:new(opts)
     opts = opts or {}
-    vim.tbl_extend('force', coll.config, {config = opts})
+    coll.config = vim.tbl_extend('force', coll.config, opts)
 
     return coll
 end
@@ -83,7 +83,7 @@ function coll:open()
         set_option(self.winid, self.bufnr)
     end
 
-    self.ui_lines_number = ui:render_header(self.bufnr)
+    self.ui_lines_number = ui:render_header(self.bufnr, self.config.engine)
 
     local group = vim.api.nvim_create_augroup("Undotree_collector", { clear = true })
     vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
