@@ -89,12 +89,12 @@ end
 ---@desc: used for job on_stdout
 function base:on_stdout(value)
     pcall(vim.schedule_wrap(function()
-        -- NOTE: cut long line to 255 characters, this maybe will casue regexp parse fail,
-        -- if file name a two long, but if this happens to you, you are really good.
-        if #value > 255 then
-            value = string.sub(value, 0, 255)
-        end
         local t = self.parse_output(value)
+
+        -- NOTE: cut long line to 255 characters, and only cut successfully parsed data `c`
+        if type(t) == "table" and t.c and #t.c > 255 then
+            t.c = string.sub(t.c, 0, 255)
+        end
         self.handler.on_result(t)
     end))
 end

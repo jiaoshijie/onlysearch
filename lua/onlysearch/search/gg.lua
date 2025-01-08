@@ -68,6 +68,10 @@ gg.on_stdout = function(self, value)
         if type(ts) == "table" then
             local t = { p = ts.p }
             for _, val in ipairs(ts.m) do
+                -- NOTE: cut long line to 255 characters, and only cut successfully parsed data `c`
+                if type(val) == "table" and val.c and #val.c > 255 then
+                    val.c = string.sub(val.c, 0, 255)
+                end
                 self.handler.on_result(vim.tbl_extend('force', t, val))
             end
         elseif type(ts) == "string" then
