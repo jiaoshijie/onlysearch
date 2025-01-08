@@ -113,7 +113,7 @@ function coll:open()
         callback = function()
             vim.opt.backspace = "indent,start"
             if not action.is_editable(self) then
-                vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
+                vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', false)
             end
         end,
     })
@@ -135,6 +135,8 @@ function coll:open()
     vim.keymap.set('n', 'C', '<nop>', map_opts)
     vim.keymap.set('n', 'c', '<nop>', map_opts)
     vim.keymap.set('n', 's', '<nop>', map_opts)
+    vim.keymap.set('n', 'p', function() action.limit_paste(self, 'p') end, map_opts)
+    vim.keymap.set('n', 'P', function() action.limit_paste(self, 'P') end, map_opts)
     -- vim.keymap.set('n', 'S', '<nop>', map_opts)
     vim.keymap.set('i', '<Cr>', '<nop>', map_opts)
     vim.keymap.set('i', '<C-j>', '<C-[>', map_opts)

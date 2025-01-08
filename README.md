@@ -14,7 +14,7 @@ WARN: This plugin doesn't provide replace functionality!
   + [ ] And support append all results in a single file to quickfix and arglist
   + [ ] only make replace operation using quickfix replace operation like `cdo`
 - [x] result protect methods
-  + [ ] `p` and `P` not handled
+  + [x] `p` and `P` not handled
 - [ ] handle long line
 - [ ] fold support
 - [ ] history(at least can resume last one)

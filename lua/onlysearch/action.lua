@@ -92,7 +92,7 @@ end
 action.on_insert_enter = function(coll)
     if not action.is_editable(coll) then
         local key = vim.api.nvim_replace_termcodes('<esc>', true, false, true)
-        vim.api.nvim_feedkeys(key, 'm', true)
+        vim.api.nvim_feedkeys(key, 'n', false)
         print("WARNING: You can't make changes in results.")
     end
 end
@@ -100,6 +100,21 @@ end
 action.on_insert_leave = function(coll)
     if action.is_editable(coll) then
         action.search(coll)
+    end
+end
+
+action.limit_paste = function(coll, key)
+    if action.is_editable(coll) then
+        local clip = vim.api.nvim_get_option_value("clipboard", { scope = "global" })
+        local reg = clip == "" and '"' or clip == "unnamedplus" and "+" or "*"
+        local reg_content = vim.fn.getreg(reg)
+        if vim.fn.match(reg_content, '\r\\|\n') == -1 then
+            vim.api.nvim_feedkeys(key, 'n', true)
+        else
+            print("WARNING: Paste multiple lines are not allowed in onlysearch buffer")
+        end
+    else
+        print("WARNING: You can't make changes in results.")
     end
 end
 
