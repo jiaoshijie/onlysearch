@@ -11,7 +11,7 @@ WARN: This plugin doesn't provide replace functionality!
 - [x] result protect methods
   + [x] `p` and `P` not handled
 - [x] handle long line
-- [ ] fold support
+- [x] fold support
 - [ ] Quickfix list
   + [ ] support add all result to quickfix and arglist
   + [ ] also support append a single line result to quickfix and arglist

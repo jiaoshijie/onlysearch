@@ -25,6 +25,9 @@ local set_option = function(winid, bufnr)
   vim.api.nvim_set_option_value('cursorline', true, win_opt)
   vim.api.nvim_set_option_value('signcolumn', 'no', win_opt)
   vim.api.nvim_set_option_value('colorcolumn', '0', win_opt)
+  vim.api.nvim_set_option_value('foldenable', false, win_opt)
+  vim.api.nvim_set_option_value('foldexpr', 'onlysearch#foldexpr()', win_opt)
+  vim.api.nvim_set_option_value('foldmethod', 'expr', win_opt)
   -- buf options --
   vim.api.nvim_set_option_value('bufhidden', 'wipe', buf_opt) -- NOTE: or 'delete'
   vim.api.nvim_set_option_value('buflisted', false, buf_opt)
@@ -82,6 +85,9 @@ function coll:open()
         vim.cmd("silent keepalt " .. self.config.open_cmd)
         self.bufnr = vim.fn.bufnr()
         self.winid = vim.fn.bufwinid(self.bufnr)
+        _G.__jsj_onlysearch_foldexpr = function(lnum)
+            return action.foldexpr(self, lnum)
+        end
         set_option(self.winid, self.bufnr)
     end
 

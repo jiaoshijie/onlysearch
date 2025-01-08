@@ -118,4 +118,28 @@ action.limit_paste = function(coll, key)
     end
 end
 
+action.foldexpr = function(coll, lnum)
+    if lnum <= coll.ui_lines_number then
+        return '0'
+    end
+
+    local entry = coll.lookup_table[lnum]
+
+    if entry == nil or entry.l == nil then
+        return '0'
+    end
+
+    local prev_entry = coll.lookup_table[lnum - 1]
+    if prev_entry and prev_entry.l == nil then
+        return '>1'
+    end
+
+    local next_entry = coll.lookup_table[lnum + 1]
+    if next_entry == nil then
+        return '<1'
+    end
+
+    return '1'
+end
+
 return action
