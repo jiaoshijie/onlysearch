@@ -119,7 +119,9 @@ action.limit_paste = function(coll, key)
 end
 
 action.foldexpr = function(coll, lnum)
-    if lnum <= coll.ui_lines_number then
+    assert(coll ~= nil)
+
+    if lnum <= coll.ui_lines_number or coll.lookup_table == nil then
         return '0'
     end
 
