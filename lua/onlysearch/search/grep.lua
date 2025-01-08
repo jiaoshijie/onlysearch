@@ -21,6 +21,9 @@ grep.config = function(user_config)
 end
 
 grep.parse_output = function(data)
+    if grep.is_raw then
+        return data
+    end
     -- NOTE: if has a filename like `main:12:34:ab.c`, this regexp will fail
     local _, _, p, l, c = string.find(data, [[([^:]+):(%d+):(.*)]])
 
@@ -37,6 +40,7 @@ grep.parse_output = function(data)
             return nil
         end
 
+        grep.is_raw = true
         -- Now suppose data is raw content(grep --help)
         return data
     end
@@ -64,6 +68,15 @@ grep.parse_filters = function(args, filters)
             end
         end
     end
+end
+
+
+---@desc: OVERWRITE `base` on_exit function(used for job on_exit)
+function grep:on_exit(_)
+    pcall(vim.schedule_wrap(function()
+        grep.is_raw = false
+        self.handler.on_finish()
+    end))
 end
 
 return grep

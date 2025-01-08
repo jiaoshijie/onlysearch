@@ -64,7 +64,7 @@ function base:search(query)
 
     self.handler.on_start()
     self.job = job:new({
-        enable_recording = true,
+        -- enable_recording = true,
         command = self.config.cmd,
         args = args,
         cwd = query.cwd,
