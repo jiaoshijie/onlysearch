@@ -79,7 +79,8 @@ ui.render_match_line = function(self, bufnr, lnum, mlnum, line, subms)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
-    -- TODO: handler long line
+    -- NOTE: cut long line to 255 characters
+    line = string.sub(line, 0, 255)
     vim.api.nvim_buf_set_lines(bufnr, lnum, lnum, false, { mlnum .. ':' .. line })
     local len = vim.api.nvim_strwidth('' .. mlnum)
     vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchMatchLNum",

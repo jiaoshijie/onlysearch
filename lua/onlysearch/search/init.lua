@@ -90,11 +90,6 @@ end
 function base:on_stdout(value)
     pcall(vim.schedule_wrap(function()
         local t = self.parse_output(value)
-
-        -- NOTE: cut long line to 255 characters, and only cut successfully parsed data `c`
-        if type(t) == "table" and t.c and #t.c > 255 then
-            t.c = string.sub(t.c, 0, 255)
-        end
         self.handler.on_result(t)
     end))
 end
