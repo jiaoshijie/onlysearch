@@ -131,14 +131,14 @@ action.foldexpr = function(coll, lnum)
         return '0'
     end
 
-    local prev_entry = coll.lookup_table[lnum - 1]
-    if prev_entry and prev_entry.l == nil then
-        return '>1'
-    end
-
     local next_entry = coll.lookup_table[lnum + 1]
     if next_entry == nil then
         return '<1'
+    end
+
+    local prev_entry = coll.lookup_table[lnum - 1]
+    if prev_entry and prev_entry.l == nil then
+        return '>1'
     end
 
     return '1'

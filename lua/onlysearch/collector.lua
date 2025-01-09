@@ -161,7 +161,6 @@ function coll:handler()
     return {
         on_start = function()
             self.lookup_table = {}
-
             h_ctx = {
                 bufnr = self.bufnr,
                 last_p  = nil,
@@ -224,6 +223,8 @@ function coll:handler()
                         h_ctx.c.match, h_ctx.c.file, h_ctx.c.time)
                 end
                 ui:render_sep(h_ctx.bufnr, h_ctx.sep_lnum, false, res)
+                -- NOTE: this is for making fold correct at the last match line
+                h_ctx.clnum = ui:render_message(h_ctx.bufnr, h_ctx.clnum, "")
             end
         end
     }
