@@ -28,6 +28,7 @@ local set_option = function(winid, bufnr)
   vim.api.nvim_set_option_value('foldenable', false, win_opt)
   vim.api.nvim_set_option_value('foldexpr', 'onlysearch#foldexpr()', win_opt)
   vim.api.nvim_set_option_value('foldmethod', 'expr', win_opt)
+  vim.api.nvim_set_option_value('winfixbuf', true, win_opt)
   -- buf options --
   vim.api.nvim_set_option_value('bufhidden', 'wipe', buf_opt) -- NOTE: or 'delete'
   vim.api.nvim_set_option_value('buflisted', false, buf_opt)
@@ -148,6 +149,9 @@ function coll:open()
     vim.keymap.set('i', '<C-j>', '<C-[>', map_opts)
     -- NOTE: action map
     vim.keymap.set("n", "<cr>", function() action.select_entry(self) end, map_opts)
+    vim.keymap.set("n", "=", function() action.toggle_lines(self) end, map_opts)
+    vim.keymap.set("x", "=", function() action.toggle_lines(self, true) end, map_opts)
+    vim.keymap.set("n", "Q", function() action.send2qf(self) end, map_opts)
 end
 
 function coll:close()
@@ -161,6 +165,8 @@ function coll:handler()
     return {
         on_start = function()
             self.lookup_table = {}
+            self.selected_items = {}
+
             h_ctx = {
                 bufnr = self.bufnr,
                 last_p  = nil,
@@ -180,7 +186,7 @@ function coll:handler()
                         h_ctx.c.file = h_ctx.c.file + 1
                         h_ctx.last_p = item.p
                         h_ctx.clnum = ui:render_filename(h_ctx.bufnr, h_ctx.clnum, item.p)
-                        self.lookup_table[h_ctx.clnum] = { f = item.p }
+                        self.lookup_table[h_ctx.clnum] = { filename = item.p }
                     end
 
                     if item.subm then
@@ -190,7 +196,9 @@ function coll:handler()
                     end
 
                     h_ctx.clnum = ui:render_match_line(h_ctx.bufnr, h_ctx.clnum, item.l, item.c, item.subm)
-                    self.lookup_table[h_ctx.clnum] = { f = item.p, l = item.l }
+                    -- NOTE: compatible with vim quickfix, but not showing any text.
+                    --       I think I will only send result to quickfix, when i need to replace maybe
+                    self.lookup_table[h_ctx.clnum] = { filename = item.p, lnum = item.l, text = "..." }
                 elseif type(item) == "string" then
                     h_ctx.clnum = ui:render_message(h_ctx.bufnr, h_ctx.clnum, item)
                 end

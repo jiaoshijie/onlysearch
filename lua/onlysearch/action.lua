@@ -1,4 +1,5 @@
 local search = require("onlysearch.search")
+local ui = require("onlysearch.ui")
 local action = {}
 
 ---@return number window_id
@@ -54,7 +55,10 @@ local gen_abs_path = function(cwd, filename)
     return vim.fn.fnameescape(abs_path)
 end
 
-action.is_editable = function(coll)
+action.is_editable = function(coll, lnum)
+    if lnum then
+        return lnum <= coll.ui_lines_number
+    end
     return vim.fn.line('.') <= coll.ui_lines_number
 end
 
@@ -83,8 +87,8 @@ action.select_entry = function(coll)
         local clnum = vim.fn.line('.')
         local entry = coll.lookup_table[clnum]
         if entry then
-            local abs_path = gen_abs_path(coll.target_winid, entry.f)
-            open_file(coll.target_winid, abs_path, entry.l)
+            local abs_path = gen_abs_path(coll.target_winid, entry.filename)
+            open_file(coll.target_winid, abs_path, entry.lnum)
         end
     end
 end
@@ -121,13 +125,13 @@ end
 action.foldexpr = function(coll, lnum)
     assert(coll ~= nil)
 
-    if lnum <= coll.ui_lines_number or coll.lookup_table == nil then
+    if action.is_editable(coll, lnum) or coll.lookup_table == nil then
         return '0'
     end
 
     local entry = coll.lookup_table[lnum]
 
-    if entry == nil or entry.l == nil then
+    if entry == nil or entry.lnum == nil then
         return '0'
     end
 
@@ -137,11 +141,99 @@ action.foldexpr = function(coll, lnum)
     end
 
     local prev_entry = coll.lookup_table[lnum - 1]
-    if prev_entry and prev_entry.l == nil then
+    if prev_entry and prev_entry.lnum == nil then
         return '>1'
     end
 
     return '1'
+end
+
+local toggle_single_line = function(coll, lnum)
+    assert(coll ~= nil)
+
+    if action.is_editable(coll, lnum) then
+        return
+    end
+    local is_sel = not coll.selected_items[lnum]
+    ui:toggle_sel_line(coll.bufnr, lnum - 1, is_sel)
+    coll.selected_items[lnum] = is_sel and lnum or nil
+end
+
+action.toggle_lines = function(coll, is_visual)
+    assert(coll ~= nil)
+    local slnum, elnum
+    if is_visual then
+        -- NOTE: quit visual mode, otherwise the < and > marks will be 0
+        local esc = vim.api.nvim_replace_termcodes('<esc>', true, false, true)
+        vim.api.nvim_feedkeys(esc, 'x', false)
+
+        slnum = unpack(vim.api.nvim_buf_get_mark(0, '<'))
+        elnum = unpack(vim.api.nvim_buf_get_mark(0, '>'))
+    else
+        slnum = vim.fn.line('.')
+        elnum = slnum + vim.api.nvim_get_vvar('count1') - 1
+    end
+    local entry = nil
+
+    if slnum == elnum then
+        entry = coll.lookup_table[slnum]
+        if entry then
+            if entry.lnum then
+                toggle_single_line(coll, slnum)
+            else
+                local lnum = slnum + 1
+                while true do
+                    entry = coll.lookup_table[lnum]
+                    if not entry then
+                        break
+                    end
+
+                    toggle_single_line(coll, lnum)
+                    lnum = lnum + 1
+                end
+            end
+        end
+        return
+    end
+
+    for lnum = slnum, elnum, 1 do
+        entry = coll.lookup_table[lnum]
+        if entry and entry.lnum then
+            toggle_single_line(coll, lnum)
+        end
+    end
+end
+
+action.send2qf = function(coll)
+    assert(coll ~= nil)
+    if not coll.lookup_table then
+        return
+    end
+
+    local list = {}
+    if type(coll.selected_items) == "table" and next(coll.selected_items) ~= nil then
+        for lnum, _ in pairs(coll.selected_items) do
+            local entry = coll.lookup_table[lnum]
+            if entry and entry.lnum then
+                table.insert(list, entry)
+            end
+        end
+    else
+        for _, entry in pairs(coll.lookup_table) do
+            if entry and entry.lnum then
+                table.insert(list, entry)
+            end
+        end
+    end
+
+    local list_len = #list;
+    if list_len > 0 then
+        vim.fn.setqflist(list, 'r')
+        vim.fn.setqflist({}, 'r', {  -- set qflist title which will be shown in statusline
+            title = "OnlySearch Result: " .. list_len .. " items",
+        })
+        vim.cmd('copen')
+    end
 end
 
 return action

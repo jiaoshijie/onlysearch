@@ -3,6 +3,7 @@ local utils = require('onlysearch.utils')
 local ui = {
     ctx = {
         ns_id = nil,
+        sel_ns_id = nil,
         sep_extmark_id = nil,
     },
     vt = {
@@ -83,16 +84,33 @@ ui.render_match_line = function(self, bufnr, lnum, mlnum, line, subms)
     line = string.sub(line, 0, 255)
     vim.api.nvim_buf_set_lines(bufnr, lnum, lnum, false, { mlnum .. ':' .. line })
     local len = vim.api.nvim_strwidth('' .. mlnum)
+
     vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchMatchLNum",
         lnum, 0, len)
     len = len + 1  -- len(':')
+
     if subms then
         for _, val in ipairs(subms) do
-            vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchMatchCtx",
-                lnum, len + val.s, len + val.e)
+            if len + val.s < 255 and len + val.e < 255 then
+                vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchMatchCtx",
+                    lnum, len + val.s, len + val.e)
+            end
         end
     end
     return lnum + 1
+end
+
+ui.toggle_sel_line = function(self, bufnr, lnum, is_sel)
+    if not self.ctx.sel_ns_id then
+        self.ctx.sel_ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_sel_ns")
+    end
+    if is_sel then
+        vim.api.nvim_buf_add_highlight(bufnr, self.ctx.sel_ns_id, "OnlysearchSelectedLine",
+            lnum, 0, -1)
+    else
+        -- BUG(jiaoshijie): maybe neovim has bug
+        vim.api.nvim_buf_clear_namespace(bufnr, self.ctx.sel_ns_id, lnum, lnum + 1)
+    end
 end
 
 ui.render_message = function(self, bufnr, lnum, line)
@@ -140,6 +158,9 @@ end
 ui.clear_ctx = function(self, bufnr, lnum)
     if self.ctx.ns_id then
         vim.api.nvim_buf_clear_namespace(bufnr, self.ctx.ns_id, 0, -1)
+    end
+    if self.ctx.sel_ns_id then
+        vim.api.nvim_buf_clear_namespace(bufnr, self.ctx.sel_ns_id, 0, -1)
     end
     vim.api.nvim_buf_set_lines(bufnr, lnum, -1, false, {})
 end
