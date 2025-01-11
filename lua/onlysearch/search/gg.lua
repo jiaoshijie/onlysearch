@@ -5,12 +5,15 @@
 local gg = {}
 
 gg.config = function(user_config)
+    user_config = user_config or {}
+    user_config.mandatory_args = nil
+
     local config = vim.tbl_extend('force', {
         mandatory_args = {
             '--json',
         },
         args = {},
-    }, user_config or {})
+    }, user_config)
 
     config.cmd = 'gg'
     vim.list_extend(config.args, config.mandatory_args)

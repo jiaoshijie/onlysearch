@@ -25,8 +25,8 @@ WARN: This plugin doesn't provide replace functionality!
   + [x] only make replace operation using quickfix replace operation like `cdo`
   + [x] auto open the quickfix list
   + [x] add a titile in statusline for quickfix list
+- [x] frequently used tool flag completion
 - [ ] history(at least can resume last one)
-- [ ] frequently used tool flag completion
 
 ### License
 

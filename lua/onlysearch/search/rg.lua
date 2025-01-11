@@ -6,6 +6,9 @@ local utils = require('onlysearch.utils')
 local rg = {}
 
 rg.config = function(user_config)
+    user_config = user_config or {}
+    user_config.mandatory_args = nil
+
     local config = vim.tbl_extend('force', {
         mandatory_args = {
             '--json',
@@ -13,7 +16,7 @@ rg.config = function(user_config)
         args = {},
         complete = {}, -- complete flags
         -- NOTE(maybe don't use): invalid flags
-    }, user_config or {})
+    }, user_config)
 
     config.cmd = 'rg'
     vim.list_extend(config.args, config.mandatory_args)

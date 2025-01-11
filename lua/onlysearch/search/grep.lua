@@ -4,6 +4,9 @@ local utils = require('onlysearch.utils')
 local grep = {}
 
 grep.config = function(user_config)
+    user_config = user_config or {}
+    user_config.mandatory_args = nil
+
     local config = vim.tbl_extend('force', {
         mandatory_args = {
             '--color=never',
@@ -12,7 +15,7 @@ grep.config = function(user_config)
             '--line-number', -- `-n`
         },
         args = {},
-    }, user_config or {})
+    }, user_config)
 
     config.cmd = 'grep'
     vim.list_extend(config.args, config.mandatory_args)

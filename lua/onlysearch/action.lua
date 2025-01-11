@@ -1,4 +1,3 @@
-local search = require("onlysearch.search")
 local ui = require("onlysearch.ui")
 local action = {}
 
@@ -64,8 +63,8 @@ end
 
 action.search = function(coll)
     if not coll.finder then
-        local finder_gen = search.setup(coll.config.engine)
-        coll.finder = finder_gen:new(coll.config.engine_config, coll:handler())
+        vim.api.nvim_err_writeln("ERROR: Onlysearch Finder can't be found")
+        return
     end
     coll.cwd = vim.fn.getcwd(coll.winid)
 
@@ -234,6 +233,34 @@ action.send2qf = function(coll)
         })
         vim.cmd('copen')
     end
+end
+
+-- TODO: using 'omnifunc' option instead of remap <C-x><C-o>
+action.omnifunc = function(coll)
+    assert(coll ~= nil)
+    if not coll.finder or not coll.finder.config
+        or not coll.finder.config.complete then
+        return
+    end
+
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    if cursor[1] ~= ui.vt.header.extra_flags.lnum + 1 then
+        print("WARNING: Only complete flags in line number 3")
+        return
+    end
+
+    local cflags = coll.finder.config.complete
+    local cursor_col = cursor[2] + 1  -- convert 0-based to 1-based column
+    local line = vim.api.nvim_get_current_line()
+    local line_to_cursor = line:sub(1, cursor_col)
+    local start_boundary = vim.fn.match(line_to_cursor, '\\k*$') --[[@as integer]]
+    local prefix = line:sub(start_boundary, cursor_col)
+
+    local items = vim.tbl_filter(function(item)
+        return item.word and vim.startswith(item.word, prefix)
+    end, cflags)
+
+    vim.fn.complete(start_boundary, items)
 end
 
 return action

@@ -1,5 +1,6 @@
 local ui = require("onlysearch.ui")
 local action = require("onlysearch.action")
+local search = require("onlysearch.search")
 
 local coll = {
     bufnr = nil,
@@ -35,6 +36,7 @@ local set_option = function(winid, bufnr)
   vim.api.nvim_set_option_value('buftype', 'nowrite', buf_opt)
   vim.api.nvim_set_option_value('swapfile', false, buf_opt)
   vim.api.nvim_set_option_value('filetype', 'nofile', buf_opt)
+  -- vim.api.nvim_set_option_value('omnifunc', '', buf_opt)
 end
 
 local buf_delete = function(bufnr)
@@ -89,7 +91,14 @@ function coll:open()
         _G.__jsj_onlysearch_foldexpr = function(lnum)
             return action.foldexpr(self, lnum)
         end
+        _G.__jsj_onlysearch_omnifunc = function()
+            return action.omnifunc(self)
+        end
         set_option(self.winid, self.bufnr)
+
+        -- TODO(refactor): better way to create finder
+        local finder_gen = search.setup(coll.config.engine)
+        coll.finder = finder_gen:new(coll.config.engine_config, coll:handler())
     end
 
     self.ui_lines_number = ui:render_header(self.bufnr, self.config.engine)
@@ -142,9 +151,9 @@ function coll:open()
     vim.keymap.set('n', 'C', '<nop>', map_opts)
     vim.keymap.set('n', 'c', '<nop>', map_opts)
     vim.keymap.set('n', 's', '<nop>', map_opts)
+    vim.keymap.set('n', 'S', '<nop>', map_opts)
     vim.keymap.set('n', 'p', function() action.limit_paste(self, 'p') end, map_opts)
     vim.keymap.set('n', 'P', function() action.limit_paste(self, 'P') end, map_opts)
-    -- vim.keymap.set('n', 'S', '<nop>', map_opts)
     vim.keymap.set('i', '<Cr>', '<nop>', map_opts)
     vim.keymap.set('i', '<C-j>', '<C-[>', map_opts)
     -- NOTE: action map
@@ -152,6 +161,7 @@ function coll:open()
     vim.keymap.set("n", "=", function() action.toggle_lines(self) end, map_opts)
     vim.keymap.set("x", "=", function() action.toggle_lines(self, true) end, map_opts)
     vim.keymap.set("n", "Q", function() action.send2qf(self) end, map_opts)
+    vim.keymap.set("i", "<C-x><C-o>", function() action.omnifunc(self) end, map_opts)
 end
 
 function coll:close()
