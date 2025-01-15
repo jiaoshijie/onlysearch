@@ -105,8 +105,11 @@ ui.toggle_sel_line = function(self, bufnr, lnum, is_sel)
         self.ctx.sel_ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_sel_ns")
     end
     if is_sel then
+        -- BUG(jiaoshijie): if col_end set to -1, nvim will draw the highlight
+        -- be {lnum, col_start = 0} and {lnum + 1, col_end = 0} this will
+        -- cause a problem when clearing highlight, so for now using 512 instead of -1
         vim.api.nvim_buf_add_highlight(bufnr, self.ctx.sel_ns_id, "OnlysearchSelectedLine",
-            lnum, 0, -1)
+            lnum, 0, 512)
     else
         -- BUG(jiaoshijie): maybe neovim has bug
         vim.api.nvim_buf_clear_namespace(bufnr, self.ctx.sel_ns_id, lnum, lnum + 1)

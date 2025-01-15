@@ -203,6 +203,22 @@ action.toggle_lines = function(coll, is_visual)
     end
 end
 
+action.clear_all_selected_items = function(coll)
+    assert(coll ~= nil)
+
+    if coll.selected_items then
+        local lnums = {}
+        -- NOTE: Maybe deleting while iterating is not a problem in lua, but i don't want do it
+        for lnum, _ in pairs(coll.selected_items) do
+            table.insert(lnums, lnum)
+        end
+
+        for _, lnum in ipairs(lnums) do
+            toggle_single_line(coll, lnum)
+        end
+    end
+end
+
 action.send2qf = function(coll)
     assert(coll ~= nil)
     if not coll.lookup_table then

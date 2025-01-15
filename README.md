@@ -5,7 +5,11 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 WARN: This plugin doesn't provide replace functionality!
 
 - [ ] BUG: nvim_buf_set_extmark() api bug
-- [ ] nvim_buf_clear_namespace api bug fix
+- [ ] BUG: nvim_buf_clear_namespace api bug fix
+  + [ ] I don't know if this is a bug or not
+  + This bug is that when nvim add a highlight to a line with col_start = 0
+  + and col_end = -1, as few cases the line column will be MAX_COL(the largest int32_t number),
+  + nvim will using {lnum, col_start = 0} and {lnum + 1, col_end = 0} to highlight the whole line of lnum
 - [x] support search tool `ripgrep` and `grep`, maybe `gg`
 - [x] support file filter
 - [x] add `flags` to search tool
@@ -26,6 +30,8 @@ WARN: This plugin doesn't provide replace functionality!
   + [x] auto open the quickfix list
   + [x] add a titile in statusline for quickfix list
 - [x] frequently used tool flag completion
+- [x] clear and select all item
+- [ ] refactor/redesign finder config
 - [ ] history(at least can resume last one)
 
 ### License
