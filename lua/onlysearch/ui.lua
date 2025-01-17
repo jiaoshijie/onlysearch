@@ -168,4 +168,22 @@ ui.clear_ctx = function(self, bufnr, lnum)
     vim.api.nvim_buf_set_lines(bufnr, lnum, -1, false, {})
 end
 
+ui.resume_query = function(self, bufnr, name, query)
+    -- clear buffer
+    self:clear_ctx(bufnr, 0)
+    if not self.vt.ns_id then
+        vim.api.nvim_buf_clear_namespace(bufnr, self.vt.ns_id)
+    end
+
+    -- set query lines
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+        query.text,
+        query.paths,
+        query.flags,
+        query.filters,
+    })
+
+    self:render_header(bufnr, name)
+end
+
 return ui

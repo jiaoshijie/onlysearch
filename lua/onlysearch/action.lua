@@ -77,6 +77,8 @@ action.search = function(coll)
     query.filters = vim.fn.trim(lines[4])
 
     if #query.text > 2 then
+        -- Save the last query, and only save the last query
+        coll:backup_query(query)
         coll.finder:search(query)
     end
 end
@@ -251,7 +253,7 @@ action.send2qf = function(coll)
     end
 end
 
--- TODO: using 'omnifunc' option instead of remap <C-x><C-o>
+-- TODO: maybe using 'omnifunc' option instead of remap a keymap
 action.omnifunc = function(coll)
     assert(coll ~= nil)
     if not coll.finder or not coll.finder.config
@@ -277,6 +279,18 @@ action.omnifunc = function(coll)
     end, cflags)
 
     vim.fn.complete(start_boundary, items)
+end
+
+action.resume_last_query = function(coll)
+    assert(coll ~= nil)
+    local query = coll:resume_query()
+    if not query then
+        print("No pervious query available, do nothing")
+        return
+    end
+
+    ui:resume_query(coll.bufnr, coll.config.engine, query)
+    coll.finder:search(query)
 end
 
 return action

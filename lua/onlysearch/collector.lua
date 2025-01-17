@@ -10,7 +10,11 @@ local coll = {
         engine = "rg",
         engine_config = {},
         open_cmd = "vnew",
-    }
+    },
+    query = {
+        last = nil,
+        current = nil,
+    },
 }
 coll.__index = coll
 
@@ -91,9 +95,6 @@ function coll:open()
         _G.__jsj_onlysearch_foldexpr = function(lnum)
             return action.foldexpr(self, lnum)
         end
-        _G.__jsj_onlysearch_omnifunc = function()
-            return action.omnifunc(self)
-        end
         set_option(self.winid, self.bufnr)
 
         coll.finder = search.construct_finder(self.config.engine,
@@ -153,15 +154,16 @@ function coll:open()
     vim.keymap.set('n', 'S', '<nop>', map_opts)
     vim.keymap.set('i', '<Cr>', '<nop>', map_opts)
     vim.keymap.set('i', '<C-j>', '<C-[>', map_opts)
+    vim.keymap.set('n', 'p', function() action.limit_paste(self, 'p') end, map_opts)
+    vim.keymap.set('n', 'P', function() action.limit_paste(self, 'P') end, map_opts)
     -- NOTE: action map
     vim.keymap.set("n", "<cr>", function() action.select_entry(self) end, map_opts)
     vim.keymap.set("n", "=", function() action.toggle_lines(self) end, map_opts)
     vim.keymap.set("x", "=", function() action.toggle_lines(self, true) end, map_opts)
     vim.keymap.set("n", "<leader>=", function() action.clear_all_selected_items(self) end, map_opts)
     vim.keymap.set("n", "Q", function() action.send2qf(self) end, map_opts)
-    vim.keymap.set("i", "<C-x><C-o>", function() action.omnifunc(self) end, map_opts)
-    vim.keymap.set('n', 'p', function() action.limit_paste(self, 'p') end, map_opts)
-    vim.keymap.set('n', 'P', function() action.limit_paste(self, 'P') end, map_opts)
+    vim.keymap.set("i", "<C-f>", function() action.omnifunc(self) end, map_opts)
+    vim.keymap.set("n", "<leader>r", function() action.resume_last_query(self) end, map_opts)
 end
 
 function coll:close()
@@ -246,6 +248,26 @@ function coll:handler()
             end
         end
     }
+end
+
+function coll:backup_query(query)
+    if type(self.query) ~= "table" then
+        self.query = {}
+    end
+
+    self.query.last = self.query.current
+    -- NOTE: As i don't change the query, Do not need deepcopy
+    self.query.current = query
+end
+
+function coll:resume_query()
+    if self.query and self.query.last then
+        local query = self.query.last
+        self:backup_query(query)
+        return self.query.current
+    end
+
+    return nil
 end
 
 return coll

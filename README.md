@@ -33,8 +33,8 @@ WARN: This plugin doesn't provide replace functionality!
 - [x] frequently used tool flag completion
 - [x] clear and select all item
 - [x] refactor/redesign finder config
-- [ ] history(at least can resume last one)
-- [ ] add user friendly documentation
+- [x] history(resume last one)
+- [ ] 1. add user friendly documentation and 2. user config keymaps
 
 ### License
 
