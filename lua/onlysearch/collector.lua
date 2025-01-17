@@ -96,9 +96,8 @@ function coll:open()
         end
         set_option(self.winid, self.bufnr)
 
-        -- TODO(refactor): better way to create finder
-        local finder_gen = search.setup(coll.config.engine)
-        coll.finder = finder_gen:new(coll.config.engine_config, coll:handler())
+        coll.finder = search.construct_finder(self.config.engine,
+            self.config.engine_config, self:handler())
     end
 
     self.ui_lines_number = ui:render_header(self.bufnr, self.config.engine)

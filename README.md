@@ -5,6 +5,7 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 WARN: This plugin doesn't provide replace functionality!
 
 - [ ] BUG: nvim_buf_set_extmark() api bug
+  + if i set an extmark above the first real line, sometimes this extmark doesn't show up
 - [ ] BUG: nvim_buf_clear_namespace api bug fix
   + [ ] I don't know if this is a bug or not
   + This bug is that when nvim add a highlight to a line with col_start = 0
@@ -31,8 +32,9 @@ WARN: This plugin doesn't provide replace functionality!
   + [x] add a titile in statusline for quickfix list
 - [x] frequently used tool flag completion
 - [x] clear and select all item
-- [ ] refactor/redesign finder config
+- [x] refactor/redesign finder config
 - [ ] history(at least can resume last one)
+- [ ] add user friendly documentation
 
 ### License
 

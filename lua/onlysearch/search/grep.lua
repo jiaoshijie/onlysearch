@@ -3,7 +3,7 @@ local utils = require('onlysearch.utils')
 -- gnu-grep tool
 local grep = {}
 
-grep.config = function(user_config)
+grep.setup = function(user_config)
     user_config = user_config or {}
     user_config.mandatory_args = nil
 

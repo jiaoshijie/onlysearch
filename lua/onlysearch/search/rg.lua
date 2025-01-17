@@ -5,7 +5,7 @@ local utils = require('onlysearch.utils')
 
 local rg = {}
 
-rg.config = function(user_config)
+rg.setup = function(user_config)
     user_config = user_config or {}
     user_config.mandatory_args = nil
 

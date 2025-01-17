@@ -4,7 +4,7 @@
 
 local gg = {}
 
-gg.config = function(user_config)
+gg.setup = function(user_config)
     user_config = user_config or {}
     user_config.mandatory_args = nil
 

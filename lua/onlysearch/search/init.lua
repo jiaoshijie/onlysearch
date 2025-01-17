@@ -112,35 +112,21 @@ function base:on_exit(_)
     end))
 end
 
-function base:setup(child)
-    local finder_generator = {}
-    finder_generator.__index = finder_generator
+_M.construct_finder = function(engine, user_config, handler)
+    assert(handler ~= nil, "handler must not be empty")
 
-    ---@param handler table { on_start, on_result, on_error, on_finish }
-    function finder_generator:new(config, handler)
-        assert(handler ~= nil, "handler must not be empty")
-        local finder = {
-            config = child.config(config),
-            handler = handler,
-        }
-
-        local meta = {}
-        meta.__index = vim.tbl_extend('force', base, child)
-        return setmetatable(finder, meta)
-    end
-
-    return finder_generator
-end
-
-_M.setup = function(key)
-    local ok, finder = pcall(require, "onlysearch.search." .. key)
+    local ok, finder = pcall(require, "onlysearch.search." .. engine)
     if not ok then
-        print("onlysearch: " .. key .. " not supported, using grep search instead")
+        print("onlysearch: " .. engine .. " not supported, using grep search instead")
         finder = require("onlysearch.search.grep")  -- TODO: maybe just quit, ui render need after this init
     end
-    -- finder.name = key
 
-    return base:setup(finder)
+    finder.config = finder.setup(user_config)
+    finder.handler = handler
+
+    finder.__index = vim.tbl_extend('force', base, finder)
+
+    return setmetatable(finder, finder)
 end
 
 return _M
