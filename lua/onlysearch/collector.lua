@@ -14,7 +14,7 @@ local coll = {
         engine = "rg",
         engine_config = {},
         open_cmd = "vnew",  -- `new` `vnew`, etc.
-        search_leave_insert = true,
+        search_leave_insert = false,
         keymaps = {
             normal = {
                 ['<cr>'] = 'select_entry',
@@ -167,8 +167,10 @@ function coll:open()
     local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
     -- NOTE: limatation keymaps
     vim.keymap.set('n', 'd', '<nop>', map_opts)
-    vim.keymap.set('n', 'D', '<nop>', map_opts)
+    vim.keymap.set('n', 'D', function() action.limit_delete(self, 'D') end, map_opts)
     vim.keymap.set('n', 'u', '<nop>', map_opts)
+    vim.keymap.set('n', 'x', function() action.limit_delete(self, 'x') end, map_opts)
+    vim.keymap.set('n', 'X', '<nop>', map_opts)
     vim.keymap.set('n', '<C-r>', '<nop>', map_opts)
     vim.keymap.set('n', 'o', 'ji', map_opts)
     vim.keymap.set('n', 'O', 'ki', map_opts)

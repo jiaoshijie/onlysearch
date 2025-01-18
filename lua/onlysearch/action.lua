@@ -108,6 +108,14 @@ action.on_insert_leave = function(coll)
     end
 end
 
+action.limit_delete = function(coll, key)
+    if action.is_editable(coll) then
+        vim.api.nvim_feedkeys(key, 'n', true)
+    else
+        print("WARNING: You can't make changes in results.")
+    end
+end
+
 action.limit_paste = function(coll, key)
     if action.is_editable(coll) then
         local clip = vim.api.nvim_get_option_value("clipboard", { scope = "global" })
