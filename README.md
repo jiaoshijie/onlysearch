@@ -2,7 +2,7 @@
 
 A nvim plugin that provides a beautiful search result views and powerful functionality(using ripgrep).
 
-WARN: This plugin doesn't provide replace functionality!
+**WARNING**: This plugin doesn't provide replace functionality!
 
 ## TODOs
 
@@ -30,6 +30,7 @@ WARN: This plugin doesn't provide replace functionality!
 - [x] refactor/redesign finder config
 - [x] history(resume last one)
 - [x] user config keymaps
+- [x] add default highlight group
 - [ ] add user friendly documentation
 
 ## NeoVim Bug

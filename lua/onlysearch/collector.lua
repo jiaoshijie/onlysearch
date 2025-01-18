@@ -167,6 +167,7 @@ function coll:open()
     local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
     -- NOTE: limatation keymaps
     vim.keymap.set('n', 'd', '<nop>', map_opts)
+    vim.keymap.set('n', 'D', '<nop>', map_opts)
     vim.keymap.set('n', 'u', '<nop>', map_opts)
     vim.keymap.set('n', '<C-r>', '<nop>', map_opts)
     vim.keymap.set('n', 'o', 'ji', map_opts)
