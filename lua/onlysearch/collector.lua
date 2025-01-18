@@ -6,14 +6,31 @@ local coll = {
     bufnr = nil,
     winid = nil,
     target_winid = nil,
-    config = {
-        engine = "rg",
-        engine_config = {},
-        open_cmd = "vnew",
-    },
     query = {
         last = nil,
         current = nil,
+    },
+    config = {
+        engine = "rg",
+        engine_config = {},
+        open_cmd = "vnew",  -- `new` `vnew`, etc.
+        search_leave_insert = true,
+        keymaps = {
+            normal = {
+                ['<cr>'] = 'select_entry',
+                ['='] = 'toggle_lines',
+                ['<leader>='] = 'clear_all_selected_items',
+                ['Q'] = 'send2qf',
+                ['<leader>r'] = 'resume_last_query',
+                ['S'] = 'search',
+            },
+            insert = {
+                ['<C-f>'] = 'omnifunc',
+            },
+            visual = {
+                ['='] = 'toggle_lines',
+            },
+        },
     },
 }
 coll.__index = coll
@@ -82,7 +99,7 @@ end
 
 function coll:new(opts)
     opts = opts or {}
-    coll.config = vim.tbl_extend('force', coll.config, opts)
+    coll.config = vim.tbl_deep_extend('force', coll.config, opts)
 
     return coll
 end
@@ -104,19 +121,25 @@ function coll:open()
     self.ui_lines_number = ui:render_header(self.bufnr, self.config.engine)
 
     local os_group = vim.api.nvim_create_augroup("Undotree_collector", { clear = true })
+    -- clear autocmd
     vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
         buffer = self.bufnr,
         group = os_group,
         callback = function()
             self.winid = nil
             self.bufnr = nil
+            self:resume_query()
         end,
     })
-    vim.api.nvim_create_autocmd("InsertLeave", {
-        buffer = self.bufnr,
-        group = os_group,
-        callback = function() action.on_insert_leave(self) end,
-    })
+    -- search autocmd
+    if self.config.search_leave_insert then
+        vim.api.nvim_create_autocmd("InsertLeave", {
+            buffer = self.bufnr,
+            group = os_group,
+            callback = function() action.on_insert_leave(self) end,
+        })
+    end
+    -- limitation autocmds
     vim.api.nvim_create_autocmd("InsertEnter", {
         buffer = self.bufnr,
         group = os_group,
@@ -142,7 +165,7 @@ function coll:open()
     })
 
     local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
-    -- NOTE: disable
+    -- NOTE: limatation keymaps
     vim.keymap.set('n', 'd', '<nop>', map_opts)
     vim.keymap.set('n', 'u', '<nop>', map_opts)
     vim.keymap.set('n', '<C-r>', '<nop>', map_opts)
@@ -157,13 +180,15 @@ function coll:open()
     vim.keymap.set('n', 'p', function() action.limit_paste(self, 'p') end, map_opts)
     vim.keymap.set('n', 'P', function() action.limit_paste(self, 'P') end, map_opts)
     -- NOTE: action map
-    vim.keymap.set("n", "<cr>", function() action.select_entry(self) end, map_opts)
-    vim.keymap.set("n", "=", function() action.toggle_lines(self) end, map_opts)
-    vim.keymap.set("x", "=", function() action.toggle_lines(self, true) end, map_opts)
-    vim.keymap.set("n", "<leader>=", function() action.clear_all_selected_items(self) end, map_opts)
-    vim.keymap.set("n", "Q", function() action.send2qf(self) end, map_opts)
-    vim.keymap.set("i", "<C-f>", function() action.omnifunc(self) end, map_opts)
-    vim.keymap.set("n", "<leader>r", function() action.resume_last_query(self) end, map_opts)
+    for k, f in pairs(self.config.keymaps.normal) do
+        vim.keymap.set("n", k, function() action[f](self) end, map_opts)
+    end
+    for k, f in pairs(self.config.keymaps.insert) do
+        vim.keymap.set("i", k, function() action[f](self) end, map_opts)
+    end
+    for k, f in pairs(self.config.keymaps.visual) do
+        vim.keymap.set("x", k, function() action[f](self, true) end, map_opts)
+    end
 end
 
 function coll:close()
@@ -261,9 +286,11 @@ function coll:backup_query(query)
 end
 
 function coll:resume_query()
-    if self.query and self.query.last then
-        local query = self.query.last
-        self:backup_query(query)
+    if self.query then
+        if self.query.last then
+            local query = self.query.last
+            self:backup_query(query)
+        end
         return self.query.current
     end
 

@@ -4,13 +4,8 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 
 WARN: This plugin doesn't provide replace functionality!
 
-- [ ] BUG: nvim_buf_set_extmark() api bug
-  + if i set an extmark above the first real line, sometimes this extmark doesn't show up
-- [ ] BUG: nvim_buf_clear_namespace api bug fix
-  + [ ] I don't know if this is a bug or not
-  + This bug is that when nvim add a highlight to a line with col_start = 0
-  + and col_end = -1, as few cases the line column will be MAX_COL(the largest int32_t number),
-  + nvim will using {lnum, col_start = 0} and {lnum + 1, col_end = 0} to highlight the whole line of lnum
+## TODOs
+
 - [x] support search tool `ripgrep` and `grep`, maybe `gg`
 - [x] support file filter
 - [x] add `flags` to search tool
@@ -34,7 +29,18 @@ WARN: This plugin doesn't provide replace functionality!
 - [x] clear and select all item
 - [x] refactor/redesign finder config
 - [x] history(resume last one)
-- [ ] 1. add user friendly documentation and 2. user config keymaps
+- [x] user config keymaps
+- [ ] add user friendly documentation
+
+## NeoVim Bug
+
+- [ ] BUG: nvim_buf_set_extmark() api bug
+  + if i set an extmark above the first real line, sometimes this extmark doesn't show up
+- [ ] BUG: nvim_buf_clear_namespace api bug fix
+  + [ ] I don't know if this is a bug or not
+  + This bug is that when nvim add a highlight to a line with col_start = 0
+  + and col_end = -1, as few cases the line column will be MAX_COL(the largest int32_t number),
+  + nvim will using {lnum, col_start = 0} and {lnum + 1, col_end = 0} to highlight the whole line of lnum
 
 ### License
 
