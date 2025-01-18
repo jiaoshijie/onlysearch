@@ -32,6 +32,7 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 - [x] user config keymaps
 - [x] add default highlight group
 - [ ] add user friendly documentation
+  + [ ] not finished
 
 ## NeoVim Bug
 
