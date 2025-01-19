@@ -308,6 +308,9 @@ function coll:handler()
         on_error = function(item)
             if h_ctx then
                 if not h_ctx.has_error then
+                    -- NOTE: set the clnum to the begin of result line number,
+                    -- and clear the stdout result only showing the error message
+                    h_ctx.clnum = self.ui_lines_number
                     ui:clear_ctx(h_ctx.bufnr, h_ctx.clnum)
                     ui:render_sep(h_ctx.bufnr, h_ctx.sep_lnum, true)
                     h_ctx.has_error = true
