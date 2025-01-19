@@ -5,7 +5,7 @@ local highlights = {
   OnlysearchHeaderFilters = { default = true, link = "Title" },
   OnlysearchFilename      = { default = true, link = "Underlined" },
   OnlysearchMatchLNum     = { default = true, link = "CursorLineNr" },
-  OnlysearchMatchCtx      = { default = true, link = "Normal" },
+  OnlysearchMatchCtx      = { default = true, link = "Search" },
   OnlysearchError         = { default = true, link = "Error" },
   OnlysearchSep           = { default = true, link = "Ignore" },
   OnlysearchSepErr        = { default = true, link = "ErrorMsg" },
