@@ -18,6 +18,7 @@ local search_constructor = require("onlysearch.search")
 --- @field engine_config EngineCfg
 --- @field open_cmd string
 --- @field search_leave_insert boolean
+--- @field keyword string used for iskeyword option `:h iskeyword` and `:h match()`
 --- @field keymaps table
     --- field normal table[]
     --- field insert table[]
@@ -63,6 +64,7 @@ local coll = {
                 ['='] = 'toggle_lines',
             },
         },
+        keyword = "48-57,-,a-z,A-Z,.,_,=",
     },
 }
 coll.__index = coll
@@ -70,7 +72,8 @@ coll.__index = coll
 --- set custom options for onlysearch buffer and window
 --- @param winid number onlysearch window's id(unique id)
 --- @param bufnr number onlysearch buffer number
-local set_option = function(winid, bufnr)
+--- @param keyword string used for iskeyword option
+local set_option = function(winid, bufnr, keyword)
     local win_opt = { scope = "local", win = winid }
     local buf_opt = { buf = bufnr }
   -- window options --
@@ -92,6 +95,7 @@ local set_option = function(winid, bufnr)
   vim.api.nvim_set_option_value('buftype', 'nowrite', buf_opt)
   vim.api.nvim_set_option_value('swapfile', false, buf_opt)
   vim.api.nvim_set_option_value('filetype', 'nofile', buf_opt)
+  vim.api.nvim_set_option_value('iskeyword', keyword, buf_opt)
   -- vim.api.nvim_set_option_value('omnifunc', '', buf_opt)
 end
 
@@ -159,7 +163,7 @@ function coll:open()
         _G.__jsj_onlysearch_foldexpr = function(lnum)
             return action.foldexpr(self, lnum)
         end
-        set_option(self.winid, self.bufnr)
+        set_option(self.winid, self.bufnr, self.config.keyword)
     end
 
     if self.finder == nil then

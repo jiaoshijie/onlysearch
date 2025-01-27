@@ -314,7 +314,7 @@ action.omnifunc = function(coll)
     local cursor_col = cursor[2] + 1  -- convert 0-based to 1-based column
     local line = vim.api.nvim_get_current_line()
     local line_to_cursor = line:sub(1, cursor_col)
-    local start_boundary = vim.fn.match(line_to_cursor, '\\k*$') --[[@as integer]]
+    local start_boundary = vim.fn.match(line_to_cursor, '\\k*$') + 1  -- `+1` convert to 1-based index
     local prefix = line:sub(start_boundary, cursor_col)
 
     local items = vim.tbl_filter(function(item)

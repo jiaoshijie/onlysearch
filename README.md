@@ -33,6 +33,7 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 - [x] add default highlight group
 - [x] add user friendly documentation
   + [x] not finished
+- [x] complete has a bug, when `--` entered, it also try to complete `-w`, etc.
 
 ## NeoVim Bug
 
