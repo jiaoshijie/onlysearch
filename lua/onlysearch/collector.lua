@@ -1,6 +1,6 @@
 local ui = require("onlysearch.ui")
 local action = require("onlysearch.action")
-local search = require("onlysearch.search")
+local search_constructor = require("onlysearch.search")
 
 --- @class Query
 --- @field cwd string working directory
@@ -9,10 +9,9 @@ local search = require("onlysearch.search")
 --- @field flags string search flags separated by space(' '), e.g. -w, -i, etc.
 --- @field filters string filters separated by space(' '), e.g. *.lua, !*.c, !target/, etc.
 
---- @class EngineCfg
---- @field mandatory_args string[] | nil  user should not using this item
---- @field args string[] | nil
---- @field complete table[] | nil
+--- @class QueryHist
+--- @field last Query | nil
+--- @field current Query | nil
 
 --- @class UserConfig
 --- @field engine string external search tool, e.g. rg, grep
@@ -30,9 +29,7 @@ local search = require("onlysearch.search")
 --- @field target_winid number | nil  the id of the window that open the onlysearch window
 --- @field lookup_table table | nil
 --- @field selected_items table | nil
---- @field query table  for resuming the last query
-    --- field last Query  last searched query
-    --- field current Query  current searched query
+--- @field query QueryHist  for resuming the last query
 --- @field config UserConfig  user custom config
 local coll = {
     bufnr = nil,
@@ -46,6 +43,7 @@ local coll = {
     },
     config = {
         engine = "rg",
+        ---@diagnostic disable-next-line: missing-fields
         engine_config = {},
         open_cmd = "vnew",  -- `new` `vnew`, etc.
         search_leave_insert = false,
@@ -154,6 +152,7 @@ end
 --- Open onlysearch window
 function coll:open()
     if self.bufnr == nil then
+        self.target_winid = vim.fn.win_getid()
         vim.cmd("silent keepalt " .. self.config.open_cmd)
         self.bufnr = vim.fn.bufnr()
         self.winid = vim.fn.bufwinid(self.bufnr)
@@ -161,8 +160,10 @@ function coll:open()
             return action.foldexpr(self, lnum)
         end
         set_option(self.winid, self.bufnr)
+    end
 
-        coll.finder = search.construct_finder(self.config.engine,
+    if self.finder == nil then
+        self.finder = search_constructor(self.config.engine,
             self.config.engine_config, self:handler())
     end
 
@@ -249,21 +250,31 @@ function coll:close()
     self.bufnr = nil
 end
 
+--- @class Handler
+--- @field on_start function
+--- @field on_result function
+--- @field on_error function
+--- @field on_finish function
 
 --- handlers for searching process
+--- @return Handler
 function coll:handler()
+    --- @class SearchResultInfo
+    --- @field file number the number of matched files
+    --- @field match number the number of matched items
+    --- @field time number the time of search processing
+
     --- @class SearchCtx
     --- @field bufnr number
     --- @field last_p string | nil
     --- @field sep_lnum number
     --- @field clnum number
-    --- @field c table
-        --- field file number
-        --- field match number
-        --- field time number
+    --- @field c SearchResultInfo
     --- @field has_error boolean
     local h_ctx = nil
     return {
+        --- 1. clear last search result
+        --- 2. init search ctx
         on_start = function()
             self.lookup_table = {}
             self.selected_items = {}
@@ -278,8 +289,9 @@ function coll:handler()
             }
 
             ui:clear_ctx(h_ctx.bufnr, h_ctx.clnum)
-            ui:render_sep(h_ctx.bufnr, h_ctx.sep_lnum)
+            ui:render_sep(h_ctx.bufnr, h_ctx.sep_lnum, false)
         end,
+        --- @param item MatchedItem | string
         on_result = function(item)
             if h_ctx and not h_ctx.has_error and h_ctx.bufnr and item then
                 if type(item) == "table" then
@@ -305,6 +317,7 @@ function coll:handler()
                 end
             end
         end,
+        --- @param item string | string[] string[] is only passed with the first error message
         on_error = function(item)
             if h_ctx then
                 if not h_ctx.has_error then
@@ -326,6 +339,8 @@ function coll:handler()
                 end
             end
         end,
+        --- 1. draw the seprate bar for output or error
+        --- 2. append an empty line at the end of the file for correcting the fold method
         on_finish = function()
             if h_ctx and not h_ctx.has_error then
                 h_ctx.c.time = (vim.uv.hrtime() - h_ctx.c.time) / 1E9
@@ -343,8 +358,12 @@ function coll:handler()
 end
 
 --- backup last query
---- @param query Query
+--- @param query Query | nil
 function coll:backup_query(query)
+    if query == nil then
+        return
+    end
+
     if type(self.query) ~= "table" then
         self.query = {}
     end

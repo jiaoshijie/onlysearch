@@ -1,5 +1,28 @@
 local utils = require('onlysearch.utils')
 
+--- @class HeaderInfo
+--- @field lnum number
+--- @field text string  the text to be displayed
+--- @field hl string  the highlight group name
+
+--- @class Headers
+--- @field search HeaderInfo
+--- @field search_path HeaderInfo
+--- @field extra_flags HeaderInfo
+--- @field filters HeaderInfo
+
+--- @class VirtualTextCtx
+--- @field ns_id number | nil
+--- @field header Headers
+
+--- @class UiCtx
+--- @field ns_id number | nil
+--- @field sel_ns_id number | nil  namespace id for selected result item
+--- @field sep_extmark_id number | nil  namespace id for separating mark that separate header and results
+
+--- @class Ui
+--- @field ctx UiCtx
+--- @field vt VirtualTextCtx
 local ui = {
     ctx = {
         ns_id = nil,
@@ -33,7 +56,11 @@ local ui = {
     }
 }
 
-ui.render_header = function(self, bufnr, name)
+--- draw the virtual headers
+--- @param bufnr number
+--- @param name string used for showing the search engine in the `extra_flags` virtual line
+--- @return number the number of headers being drawn
+function ui:render_header(bufnr, name)
     if not self.vt.ns_id then
         self.vt.ns_id = vim.api.nvim_create_namespace("onlysearch_vt_ns")
     end
@@ -64,7 +91,12 @@ ui.render_header = function(self, bufnr, name)
     return header_count
 end
 
-ui.render_filename = function(self, bufnr, lnum, line)
+--- render the file name of the result
+--- @param bufnr number
+--- @param lnum number the line number which the filename should be place at
+--- @param line string the filename string
+--- @return number the line number next content should be place at
+function ui:render_filename(bufnr, lnum, line)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
@@ -76,7 +108,14 @@ ui.render_filename = function(self, bufnr, lnum, line)
     return lnum + 1
 end
 
-ui.render_match_line = function(self, bufnr, lnum, mlnum, line, subms)
+--- render matched line of the result
+--- @param bufnr number
+--- @param lnum number the line number which the filename should be place at
+--- @param mlnum number the line number of the match item in the file
+--- @param line string
+--- @param subms MatchRange[] | nil
+--- @return number the line number next content should be place at
+function ui:render_match_line(bufnr, lnum, mlnum, line, subms)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
@@ -100,7 +139,11 @@ ui.render_match_line = function(self, bufnr, lnum, mlnum, line, subms)
     return lnum + 1
 end
 
-ui.toggle_sel_line = function(self, bufnr, lnum, is_sel)
+--- draw the selected highlight or clear the selected highlight
+--- @param bufnr number
+--- @param lnum number the line number that selected or unseleted
+--- @param is_sel boolean is select or not
+function ui:toggle_sel_line(bufnr, lnum, is_sel)
     if not self.ctx.sel_ns_id then
         self.ctx.sel_ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_sel_ns")
     end
@@ -116,7 +159,12 @@ ui.toggle_sel_line = function(self, bufnr, lnum, is_sel)
     end
 end
 
-ui.render_message = function(self, bufnr, lnum, line)
+--- draw the raw text(e.g. rg --help)
+--- @param bufnr number
+--- @param lnum number
+--- @param line string
+--- @return number the line number next content should be place at
+function ui:render_message(bufnr, lnum, line)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
@@ -124,7 +172,12 @@ ui.render_message = function(self, bufnr, lnum, line)
     return lnum + 1
 end
 
-ui.render_error = function(self, bufnr, lnum, line)
+--- draw the error message
+--- @param bufnr number
+--- @param lnum number
+--- @param line string
+--- @return number the line number next content should be place at
+function ui:render_error(bufnr, lnum, line)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
@@ -135,7 +188,12 @@ ui.render_error = function(self, bufnr, lnum, line)
     return lnum + 1
 end
 
-ui.render_sep = function(self, bufnr, lnum, is_error, ctx)
+--- draw the separating mark
+--- @param bufnr number
+--- @param lnum number
+--- @param is_error boolean
+--- @param ctx string | nil
+function ui:render_sep(bufnr, lnum, is_error, ctx)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
@@ -158,7 +216,10 @@ ui.render_sep = function(self, bufnr, lnum, is_error, ctx)
     })
 end
 
-ui.clear_ctx = function(self, bufnr, lnum)
+--- clear the content from `lnum` to the end and remove namespace of result and separating mark
+--- @param bufnr number
+--- @param lnum number
+function ui:clear_ctx(bufnr, lnum)
     if self.ctx.ns_id then
         vim.api.nvim_buf_clear_namespace(bufnr, self.ctx.ns_id, 0, -1)
     end
@@ -168,11 +229,15 @@ ui.clear_ctx = function(self, bufnr, lnum)
     vim.api.nvim_buf_set_lines(bufnr, lnum, -1, false, {})
 end
 
-ui.resume_query = function(self, bufnr, name, query)
+--- redraw the ui for last query
+--- @param bufnr number
+--- @param name string the used engine name(e.g. rg, grep)
+--- @param query Query
+function ui:resume_query(bufnr, name, query)
     -- clear buffer
     self:clear_ctx(bufnr, 0)
     if not self.vt.ns_id then
-        vim.api.nvim_buf_clear_namespace(bufnr, self.vt.ns_id)
+        vim.api.nvim_buf_clear_namespace(bufnr, self.vt.ns_id, 0, -1)
     end
 
     -- set query lines

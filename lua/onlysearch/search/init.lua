@@ -1,39 +1,65 @@
 local job = require('plenary.job')
 local utils = require('onlysearch.utils')
 
----@interface
-local _M = {}
+--- @class CompleteCtx
+--- @field word string  `:h complete-items`
+--- @field kind string
+
+--- @class EngineCfg
+--- @field cmd string  only used internally, user should not using this item
+--- @field mandatory_args string[]  only used internally, user should not using this item
+--- @field args string[]  user custom default search config
+--- @field complete CompleteCtx[]  user defined complete flags for easy using
+
+--- base class for searching
+--- @class SearchInterface
+--- @field job Job | nil
+--- @field not_first_error nil | boolean
+--- @field config EngineCfg
+--- @field handler Handler
+--- method
+--- @field parse_output function
+--- @field parse_filters function
+--- @field search function
+--- @field stop function
+--- @field on_stdout function
+--- @field on_stderr function
+--- @field on_exit function
 local base = {
     job = nil,
     not_first_error = nil,
 }
 base.__index = base
 
----@desc: extract the search tool output to standard format
----       this function should be implemented by all the child class
----@return table
---- table:
---- {
----     p = string,
----     c = string,
----     l = number,
----     subm = {
----         {
----             s = number,
----             e = number
----         }
----     }
---- }
--- base.parse_output = function(self)
---     -- NOTE: finders implement their own parse_output
--- end
+--- @class MatchRange
+--- @field s number the start position of matched item(zero-based)
+--- @field e number the end postion of matched item(excluded)
 
-base.parse_filters = function(_, _)
+--- @class MatchedItem
+--- @field p string the file path of matched item
+--- @field c string the line content of matched item
+--- @field l number the line number of matched item in the file
+--- @field subm MatchRange[] | nil
+
+--- extract the search tool output to standard format
+---        this function should be implemented by all the child class
+--- @param data string the raw output of external search tool
+--- @return MatchedItem | string | nil
+--- @diagnostic disable-next-line: unused-local
+base.parse_output = function(data)
+    -- NOTE: finders implement their own parse_output
+    return nil
+end
+
+--- @param args string[]
+--- @param filters string separated by space
+--- @diagnostic disable-next-line: unused-local
+base.parse_filters = function(args, filters)
     print("WARNING: filters not supported, will search without filters")
 end
 
----@desc: Start a search job
----@param query table { text="", paths="", flags="", filters="", cwd="" }
+--- Start a search job
+---@param query Query
 function base:search(query)
     local args = vim.deepcopy(self.config.args)
 
@@ -63,8 +89,9 @@ function base:search(query)
     self:stop()  -- try to stop previous search if have and not yet finished
 
     self.handler.on_start()
+
+    ---@diagnostic disable-next-line: missing-fields
     self.job = job:new({
-        -- enable_recording = true,
         command = self.config.cmd,
         args = args,
         cwd = query.cwd,
@@ -75,9 +102,9 @@ function base:search(query)
     self.job:start()
 end
 
----@desc: Stop a not finished search job:
----       1. new search job are coming
----       2. the onlysearch window closed
+--- Stop a not finished search job, called when:
+---   1. new search job are coming
+---   2. the onlysearch window closed
 function base:stop()
     if self.job ~= nil and self.job.is_shutdown == nil then
         self.job:shutdown()
@@ -86,7 +113,8 @@ function base:stop()
     self.not_first_error = false
 end
 
----@desc: used for job on_stdout
+--- used for job on_stdout
+--- @param value string
 function base:on_stdout(value)
     pcall(vim.schedule_wrap(function()
         local t = self.parse_output(value)
@@ -94,25 +122,31 @@ function base:on_stdout(value)
     end))
 end
 
----@desc: used for job on_stderr
+--- used for job on_stderr
+--- @param value string
 function base:on_stderr(value)
     pcall(vim.schedule_wrap(function()
         if not self.not_first_error then
             self.not_first_error = true
-            value = { "", self.job.command .. ' ' .. table.concat(self.job.args, ' '), "", value }
+            self.handler.on_error({ "", self.job.command .. ' ' .. table.concat(self.job.args, ' '), "", value })
+        else
+            self.handler.on_error(value)
         end
-        self.handler.on_error(value)
     end))
 end
 
----@desc: used for job on_exit
+--- used for job on_exit
 function base:on_exit(_)
     pcall(vim.schedule_wrap(function()
         self.handler.on_finish()
     end))
 end
 
-_M.construct_finder = function(engine, user_config, handler)
+--- construct a finder instance
+--- @param engine string finder engine for communicate with external search tools
+--- @param engine_config EngineCfg
+--- @param handler Handler
+local construct_finder = function(engine, engine_config, handler)
     assert(handler ~= nil, "handler must not be empty")
 
     local ok, finder = pcall(require, "onlysearch.search." .. engine)
@@ -121,7 +155,7 @@ _M.construct_finder = function(engine, user_config, handler)
         finder = require("onlysearch.search.grep")  -- TODO: maybe just quit, ui render need after this init
     end
 
-    finder.config = finder.setup(user_config)
+    finder.config = finder.setup(engine_config)
     finder.handler = handler
 
     finder.__index = vim.tbl_extend('force', base, finder)
@@ -129,4 +163,4 @@ _M.construct_finder = function(engine, user_config, handler)
     return setmetatable(finder, finder)
 end
 
-return _M
+return construct_finder

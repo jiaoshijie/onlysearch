@@ -74,7 +74,7 @@ grep.parse_filters = function(args, filters)
 end
 
 
----@desc: OVERWRITE `base` on_exit function(used for job on_exit)
+--- OVERWRITE `base` on_exit function(used for job on_exit)
 function grep:on_exit(_)
     pcall(vim.schedule_wrap(function()
         grep.is_raw = false

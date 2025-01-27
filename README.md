@@ -31,8 +31,8 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 - [x] history(resume last one)
 - [x] user config keymaps
 - [x] add default highlight group
-- [ ] add user friendly documentation
-  + [ ] not finished
+- [x] add user friendly documentation
+  + [x] not finished
 
 ## NeoVim Bug
 

@@ -1,14 +1,17 @@
 local utils = {}
 
+--- Get the table length
+--- @param t table
+--- @return number the table length
 utils.table_numbers = function(t)
     local count = 0
     for _ in pairs(t) do count = count + 1 end
     return count
 end
 
----Scan a path string and split it into multiple paths.
----@param s_path string
----@return string[]
+--- Scan a path string and split it into multiple paths.
+--- @param s_path string
+--- @return string[]
 utils.scan_paths = function(s_path)
     local paths = {}
     local path = ''

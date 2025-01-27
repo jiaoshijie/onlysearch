@@ -21,7 +21,7 @@ gg.setup = function(user_config)
     return config
 end
 
----@desc: NOTE: the gg parse_output is different to rg and grep
+--- NOTE: the gg parse_output is different to rg and grep
 ---@return table
 --- table:
 --- {

@@ -1,7 +1,8 @@
 local ui = require("onlysearch.ui")
 local action = {}
 
----@return number window_id
+--- @param winid number the window id that the user is in when open the onlysearch window
+--- @return number the window id that the bufnr will be placed at
 local chose_window = function(winid)
     -- 1. first try to use the last window to open the file
     local lwinid = vim.fn.win_getid()
@@ -32,6 +33,9 @@ local chose_window = function(winid)
     return vim.fn.win_getid()
 end
 
+--- @param winid number
+--- @param abs_path string
+--- @param lnum number
 local open_file = function(winid, abs_path, lnum)
     vim.fn.win_gotoid(chose_window(winid))
     vim.cmd('edit ' .. abs_path)
@@ -42,18 +46,26 @@ local open_file = function(winid, abs_path, lnum)
     end
 end
 
+--- @param cwd string
+--- @param filename string
+--- @return string
 local gen_abs_path = function(cwd, filename)
     local abs_path = nil
     if string.sub(filename, 1, 1) == '/' then
         abs_path = '' .. filename  -- deepcopy the string
     else
         cwd = cwd and cwd or vim.fn.getcwd()
+        filename = string.sub(filename, 1, 2) == './' and string.sub(filename, 3) or filename
+
         abs_path = vim.fn.expand(cwd) .. '/' .. filename
     end
 
     return vim.fn.fnameescape(abs_path)
 end
 
+--- @param coll Onlysearch
+--- @param lnum number | nil
+--- @return boolean
 action.is_editable = function(coll, lnum)
     if lnum then
         return lnum <= coll.ui_lines_number
@@ -61,15 +73,15 @@ action.is_editable = function(coll, lnum)
     return vim.fn.line('.') <= coll.ui_lines_number
 end
 
+--- @param coll Onlysearch
 action.search = function(coll)
     if not coll.finder then
         vim.api.nvim_err_writeln("ERROR: Onlysearch Finder can't be found")
         return
     end
-    coll.cwd = vim.fn.getcwd(coll.winid)
 
     local query = {}
-    query.cwd = coll.cwd
+    query.cwd = vim.fn.getcwd(coll.winid)
     local lines = vim.api.nvim_buf_get_lines(coll.bufnr, 0, coll.ui_lines_number, false)
     query.text = lines[1]
     query.paths = vim.fn.trim(lines[2])
@@ -83,17 +95,22 @@ action.search = function(coll)
     end
 end
 
+--- open a result item and put cursor on the matched line
+--- @param coll Onlysearch
 action.select_entry = function(coll)
     if coll.lookup_table then
+        assert(coll.query ~= nil and coll.query.current ~= nil)
         local clnum = vim.fn.line('.')
         local entry = coll.lookup_table[clnum]
         if entry then
-            local abs_path = gen_abs_path(coll.target_winid, entry.filename)
+            local abs_path = gen_abs_path(coll.query.current.cwd, entry.filename)
             open_file(coll.target_winid, abs_path, entry.lnum)
         end
     end
 end
 
+--- prevent user enter insert mode in result area
+--- @param coll Onlysearch
 action.on_insert_enter = function(coll)
     if not action.is_editable(coll) then
         local key = vim.api.nvim_replace_termcodes('<esc>', true, false, true)
@@ -102,12 +119,17 @@ action.on_insert_enter = function(coll)
     end
 end
 
+--- Do search when leave insert mode
+--- @param coll Onlysearch
 action.on_insert_leave = function(coll)
     if action.is_editable(coll) then
         action.search(coll)
     end
 end
 
+--- prevent user do deletion operation. e.g. d D x X in result area
+--- @param coll Onlysearch
+--- @param key string
 action.limit_delete = function(coll, key)
     if action.is_editable(coll) then
         vim.api.nvim_feedkeys(key, 'n', true)
@@ -116,6 +138,9 @@ action.limit_delete = function(coll, key)
     end
 end
 
+--- limit user do paste operation. `p` `P`
+--- @param coll Onlysearch
+--- @param key string
 action.limit_paste = function(coll, key)
     if action.is_editable(coll) then
         local clip = vim.api.nvim_get_option_value("clipboard", { scope = "global" })
@@ -131,6 +156,9 @@ action.limit_paste = function(coll, key)
     end
 end
 
+--- @param coll Onlysearch
+--- @param lnum number
+--- @return string
 action.foldexpr = function(coll, lnum)
     assert(coll ~= nil)
 
@@ -157,6 +185,8 @@ action.foldexpr = function(coll, lnum)
     return '1'
 end
 
+--- @param coll Onlysearch
+--- @param lnum number
 local toggle_single_line = function(coll, lnum)
     assert(coll ~= nil)
 
@@ -168,6 +198,8 @@ local toggle_single_line = function(coll, lnum)
     coll.selected_items[lnum] = is_sel and lnum or nil
 end
 
+--- @param coll Onlysearch
+--- @param is_visual boolean
 action.toggle_lines = function(coll, is_visual)
     assert(coll ~= nil)
     local slnum, elnum
@@ -213,6 +245,7 @@ action.toggle_lines = function(coll, is_visual)
     end
 end
 
+--- @param coll Onlysearch
 action.clear_all_selected_items = function(coll)
     assert(coll ~= nil)
 
@@ -229,6 +262,7 @@ action.clear_all_selected_items = function(coll)
     end
 end
 
+--- @param coll Onlysearch
 action.send2qf = function(coll)
     assert(coll ~= nil)
     if not coll.lookup_table then
@@ -262,6 +296,7 @@ action.send2qf = function(coll)
 end
 
 -- TODO: maybe using 'omnifunc' option instead of remap a keymap
+--- @param coll Onlysearch
 action.omnifunc = function(coll)
     assert(coll ~= nil)
     if not coll.finder or not coll.finder.config
@@ -289,6 +324,7 @@ action.omnifunc = function(coll)
     vim.fn.complete(start_boundary, items)
 end
 
+--- @param coll Onlysearch
 action.resume_last_query = function(coll)
     assert(coll ~= nil)
     local query = coll:resume_query()
