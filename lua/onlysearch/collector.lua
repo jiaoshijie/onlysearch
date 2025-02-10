@@ -94,7 +94,7 @@ local set_option = function(winid, bufnr, keyword)
   vim.api.nvim_set_option_value('buflisted', false, buf_opt)
   vim.api.nvim_set_option_value('buftype', 'nowrite', buf_opt)
   vim.api.nvim_set_option_value('swapfile', false, buf_opt)
-  vim.api.nvim_set_option_value('filetype', 'nofile', buf_opt)
+  vim.api.nvim_set_option_value('filetype', 'onlysearch', buf_opt)
   vim.api.nvim_set_option_value('iskeyword', keyword, buf_opt)
   -- vim.api.nvim_set_option_value('omnifunc', '', buf_opt)
 end
@@ -235,6 +235,8 @@ function coll:open()
     vim.keymap.set('i', '<C-j>', '<C-[>', map_opts)
     vim.keymap.set('n', 'p', function() action.limit_paste(self, 'p') end, map_opts)
     vim.keymap.set('n', 'P', function() action.limit_paste(self, 'P') end, map_opts)
+    vim.keymap.set({'n', 'v'}, 'J', 'j', map_opts)
+    vim.keymap.set({'n', 'v'}, 'gJ', 'j', map_opts)
     -- NOTE: action map
     for k, f in pairs(self.config.keymaps.normal) do
         vim.keymap.set("n", k, function() action[f](self) end, map_opts)
