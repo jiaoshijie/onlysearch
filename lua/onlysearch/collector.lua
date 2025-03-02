@@ -354,6 +354,8 @@ function coll:handler()
                 if h_ctx.c.file > 0 and h_ctx.c.match > 0 then
                     res = string.format("(%d matches in %d files):(time: %.03fs)",
                         h_ctx.c.match, h_ctx.c.file, h_ctx.c.time)
+                else
+                    res = string.format("(no matches)")
                 end
                 ui:render_sep(h_ctx.bufnr, h_ctx.sep_lnum, false, res)
                 -- NOTE: this is for making fold correct at the last match line
