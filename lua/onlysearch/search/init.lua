@@ -123,14 +123,16 @@ function base:on_stdout(value)
 end
 
 --- used for job on_stderr
---- @param value string
+--- @param value string | nil
 function base:on_stderr(value)
     pcall(vim.schedule_wrap(function()
-        if not self.not_first_error then
-            self.not_first_error = true
-            self.handler.on_error({ "", self.job.command .. ' ' .. table.concat(self.job.args, ' '), "", value })
-        else
-            self.handler.on_error(value)
+        if value ~= nil then
+            if not self.not_first_error then
+                self.not_first_error = true
+                self.handler.on_error({ "", self.job.command .. ' ' .. table.concat(self.job.args, ' '), "", value })
+            else
+                self.handler.on_error(value)
+            end
         end
     end))
 end
