@@ -4,6 +4,7 @@ local utils = require('onlysearch.utils')
 --- @field lnum number
 --- @field text string  the text to be displayed
 --- @field hl string  the highlight group name
+--- @field ignore boolean don't render this item
 
 --- @class Headers
 --- @field search HeaderInfo
@@ -36,21 +37,25 @@ local ui = {
                 lnum = 0,
                 text = "Search:",
                 hl = "OnlysearchHeaderSearch",
+                ignore = true,
             },
             search_path = {
                 lnum = 1,
                 text = "Search Path:",
                 hl = "OnlysearchHeaderPaths",
+                ignore = false,
             },
             extra_flags = {
                 lnum = 2,
                 text = "Extra Flags:",
                 hl = "OnlysearchHeaderFlags",
+                ignore = false,
             },
             filters = {
                 lnum = 3,
                 text = "Filters:",
                 hl = "OnlysearchHeaderFilters",
+                ignore = false,
             }
         }
     }
@@ -77,6 +82,7 @@ function ui:render_header(bufnr, name)
     local header_count = 0
     for _, v in pairs(self.vt.header) do
         header_count = header_count + 1
+        if v.ignore then goto continue end
         if v.lnum == 2 and name then  -- NOTE: `extra flags` virtual text line number
             v.text = "Extra Flags(" .. name .. "):"
         end
@@ -86,6 +92,7 @@ function ui:render_header(bufnr, name)
             virt_lines_above = true,
             right_gravity = false,
         })
+        ::continue::
     end
 
     return header_count
@@ -236,7 +243,7 @@ end
 function ui:resume_query(bufnr, name, query)
     -- clear buffer
     self:clear_ctx(bufnr, 0)
-    if not self.vt.ns_id then
+    if self.vt.ns_id then
         vim.api.nvim_buf_clear_namespace(bufnr, self.vt.ns_id, 0, -1)
     end
 
