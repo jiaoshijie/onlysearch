@@ -1,5 +1,5 @@
-local job = require('plenary.job')
 local utils = require('onlysearch.utils')
+local task = require('onlysearch.task')
 
 --- @class CompleteCtx
 --- @field word string  `:h complete-items`
@@ -13,8 +13,8 @@ local utils = require('onlysearch.utils')
 
 --- base class for searching
 --- @class SearchInterface
---- @field job Job | nil
---- @field not_first_error nil | boolean
+--- @field task ?Task
+--- @field not_first_error ?boolean
 --- @field config EngineCfg
 --- @field handler Handler
 --- method
@@ -26,7 +26,7 @@ local utils = require('onlysearch.utils')
 --- @field on_stderr function
 --- @field on_exit function
 local base = {
-    job = nil,
+    task = nil,
     not_first_error = nil,
 }
 base.__index = base
@@ -39,7 +39,7 @@ base.__index = base
 --- @field p string the file path of matched item
 --- @field c string the line content of matched item
 --- @field l number the line number of matched item in the file
---- @field subm MatchRange[] | nil
+--- @field subm ?MatchRange[]
 
 --- extract the search tool output to standard format
 ---        this function should be implemented by all the child class
@@ -58,7 +58,7 @@ base.parse_filters = function(args, filters)
     print("WARNING: filters not supported, will search without filters")
 end
 
---- Start a search job
+--- Start a search task
 ---@param query Query
 function base:search(query)
     local args = vim.deepcopy(self.config.args)
@@ -90,46 +90,55 @@ function base:search(query)
 
     self.handler.on_start()
 
-    ---@diagnostic disable-next-line: missing-fields
-    self.job = job:new({
+    self.task = task:new({
         command = self.config.cmd,
         args = args,
-        cwd = query.cwd,
-        on_stdout = function(_, data) self:on_stdout(data) end,
-        on_stderr = function(_, data) self:on_stderr(data) end,
-        on_exit = function(_, data) self:on_exit(data) end,
+        on_stdout = function(id, data) self:on_stdout(id, data) end,
+        on_stderr = function(id, data) self:on_stderr(id, data) end,
+        on_exit = function(id) self:on_exit(id) end,
     })
-    self.job:start()
+    self.task:start()
 end
 
---- Stop a not finished search job, called when:
----   1. new search job are coming
+--- Stop a not finished search task, called when:
+---   1. new search task are coming
 ---   2. the onlysearch window closed
 function base:stop()
-    if self.job ~= nil and self.job.is_shutdown == nil then
-        self.job:shutdown()
+    if self.task ~= nil and not self.task.is_shutdown then
+        self.task:shutdown(true)
     end
-    self.job = nil
+    self.task = nil
     self.not_first_error = false
 end
 
---- used for job on_stdout
---- @param value string
-function base:on_stdout(value)
+--- @param task_obj Task
+--- @param id number
+--- @return boolean
+local is_task_invalid = function(task_obj, id)
+    return task_obj == nil or type(id) ~= "number" or task_obj.id ~= id
+end
+
+--- used for task on_stdout
+--- @param values string[]
+function base:on_stdout(id, values)
     pcall(vim.schedule_wrap(function()
-        local t = self.parse_output(value)
-        self.handler.on_result(t)
+        if is_task_invalid(self.task, id) then return end
+        for _, value in ipairs(values) do
+            local t = self.parse_output(value)
+            self.handler.on_result(t)
+        end
     end))
 end
 
---- used for job on_stderr
---- @param value string | nil
-function base:on_stderr(value)
+--- used for task on_stderr
+--- @param values string[]
+function base:on_stderr(id, values)
     pcall(vim.schedule_wrap(function()
-        if value ~= nil then
+        if is_task_invalid(self.task, id) then return end
+        for _, value in ipairs(values) do
             if not self.not_first_error then
                 self.not_first_error = true
-                self.handler.on_error({ "", self.job.command .. ' ' .. table.concat(self.job.args, ' '), "", value })
+                self.handler.on_error({ "", self.task.cfg.command .. ' ' .. table.concat(self.task.cfg.args, ' '), "", value })
             else
                 self.handler.on_error(value)
             end
@@ -137,9 +146,10 @@ function base:on_stderr(value)
     end))
 end
 
---- used for job on_exit
-function base:on_exit(_)
+--- used for task on_exit
+function base:on_exit(id)
     pcall(vim.schedule_wrap(function()
+        if is_task_invalid(self.task, id) then return end
         self.handler.on_finish()
     end))
 end

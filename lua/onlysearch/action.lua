@@ -1,4 +1,5 @@
 local ui = require("onlysearch.ui")
+local utils = require("onlysearch.utils")
 local action = {}
 
 --- @param winid number the window id that the user is in when open the onlysearch window
@@ -64,7 +65,7 @@ local gen_abs_path = function(cwd, filename)
 end
 
 --- @param coll Onlysearch
---- @param lnum number | nil
+--- @param lnum ?number
 --- @return boolean
 action.is_editable = function(coll, lnum)
     if lnum then
@@ -76,12 +77,11 @@ end
 --- @param coll Onlysearch
 action.search = function(coll)
     if not coll.finder then
-        vim.api.nvim_err_writeln("ERROR: Onlysearch Finder can't be found")
+        utils.echo_err_msg("ERROR: Onlysearch Finder can't be found")
         return
     end
 
     local query = {}
-    query.cwd = vim.fn.getcwd(coll.winid)
     local lines = vim.api.nvim_buf_get_lines(coll.bufnr, 0, coll.ui_lines_number, false)
     query.text = lines[1]
     query.paths = vim.fn.trim(lines[2])

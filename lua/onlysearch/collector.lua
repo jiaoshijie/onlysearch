@@ -3,15 +3,14 @@ local action = require("onlysearch.action")
 local search_constructor = require("onlysearch.search")
 
 --- @class Query
---- @field cwd string working directory
 --- @field text string search text
 --- @field paths string search paths separated by space(' ')
 --- @field flags string search flags separated by space(' '), e.g. -w, -i, etc.
 --- @field filters string filters separated by space(' '), e.g. *.lua, !*.c, !target/, etc.
 
 --- @class QueryHist
---- @field last Query | nil
---- @field current Query | nil
+--- @field last ?Query
+--- @field current ?Query
 
 --- @class UserConfig
 --- @field engine string external search tool, e.g. rg, grep
@@ -25,11 +24,11 @@ local search_constructor = require("onlysearch.search")
     --- field visual table[]
 
 --- @class Onlysearch
---- @field bufnr number | nil onlysearch buffer number
---- @field winid number | nil onlysearch window unique id
---- @field target_winid number | nil  the id of the window that open the onlysearch window
---- @field lookup_table table | nil
---- @field selected_items table | nil
+--- @field bufnr ?number onlysearch buffer number
+--- @field winid ?number onlysearch window unique id
+--- @field target_winid ?number the id of the window that open the onlysearch window
+--- @field lookup_table ?table
+--- @field selected_items ?table
 --- @field query QueryHist  for resuming the last query
 --- @field config UserConfig  user custom config
 local coll = {
@@ -272,7 +271,7 @@ function coll:handler()
 
     --- @class SearchCtx
     --- @field bufnr number
-    --- @field last_p string | nil
+    --- @field last_p ?string
     --- @field sep_lnum number
     --- @field clnum number
     --- @field c SearchResultInfo
@@ -366,7 +365,7 @@ function coll:handler()
 end
 
 --- backup last query
---- @param query Query | nil
+--- @param query ?Query
 function coll:backup_query(query)
     if query == nil then
         return
@@ -382,7 +381,7 @@ function coll:backup_query(query)
 end
 
 --- resume last query
---- @return Query | nil
+--- @return Query?
 function coll:resume_query()
     if self.query then
         if self.query.last then

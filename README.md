@@ -34,7 +34,7 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 - [x] add user friendly documentation
   + [x] not finished
 - [x] complete has a bug, when `--` entered, it also try to complete `-w`, etc.
-- [ ] write own async functionality
+- [x] write own async functionality
 - [ ] When open file to a window, check whether this window has `winfixbuf` set
 
 ## NeoVim Bug

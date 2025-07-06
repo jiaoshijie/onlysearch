@@ -13,13 +13,13 @@ local utils = require('onlysearch.utils')
 --- @field filters HeaderInfo
 
 --- @class VirtualTextCtx
---- @field ns_id number | nil
+--- @field ns_id ?number
 --- @field header Headers
 
 --- @class UiCtx
---- @field ns_id number | nil
---- @field sel_ns_id number | nil  namespace id for selected result item
---- @field sep_extmark_id number | nil  namespace id for separating mark that separate header and results
+--- @field ns_id ?number
+--- @field sel_ns_id ?number
+--- @field sep_extmark_id ?number namespace id for separating mark that separate header and results
 
 --- @class Ui
 --- @field ctx UiCtx
@@ -120,7 +120,7 @@ end
 --- @param lnum number the line number which the filename should be place at
 --- @param mlnum number the line number of the match item in the file
 --- @param line string
---- @param subms MatchRange[] | nil
+--- @param subms ?MatchRange[]
 --- @return number the line number next content should be place at
 function ui:render_match_line(bufnr, lnum, mlnum, line, subms)
     if not self.ctx.ns_id then
@@ -199,7 +199,7 @@ end
 --- @param bufnr number
 --- @param lnum number
 --- @param is_error boolean
---- @param ctx string | nil
+--- @param ctx ?string
 function ui:render_sep(bufnr, lnum, is_error, ctx)
     if not self.ctx.ns_id then
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
