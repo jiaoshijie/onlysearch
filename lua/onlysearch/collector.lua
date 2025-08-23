@@ -1,6 +1,7 @@
 local ui = require("onlysearch.ui")
 local action = require("onlysearch.action")
 local search_constructor = require("onlysearch.search")
+local onlysearch_buf_name = "[OnlySearch]"
 
 --- @class Query
 --- @field text string search text
@@ -13,12 +14,14 @@ local search_constructor = require("onlysearch.search")
 --- @field current ?Query
 
 --- @class UserConfig
+--- @field buf_name string
 --- @field engine string external search tool, e.g. rg, grep
 --- @field engine_config EngineCfg
 --- @field open_cmd string
 --- @field search_leave_insert boolean
 --- @field keyword string used for iskeyword option `:h iskeyword` and `:h match()`
 --- @field keymaps table
+--- @field handle_sys_clipboard_paste boolean
     --- field normal table[]
     --- field insert table[]
     --- field visual table[]
@@ -29,6 +32,7 @@ local search_constructor = require("onlysearch.search")
 --- @field target_winid ?number the id of the window that open the onlysearch window
 --- @field lookup_table ?table
 --- @field selected_items ?table
+--- @field orign_vim_dot_paste fun(lines: string[], phase: number)
 --- @field query QueryHist  for resuming the last query
 --- @field config UserConfig  user custom config
 local coll = {
@@ -37,11 +41,13 @@ local coll = {
     target_winid = nil,
     lookup_table = nil,
     selected_items = nil,
+    orignal_vim_dot_paste = vim.paste,
     query = {
         last = nil,
         current = nil,
     },
     config = {
+        buf_name = onlysearch_buf_name,
         engine = "rg",
         ---@diagnostic disable-next-line: missing-fields
         engine_config = {},
@@ -64,6 +70,7 @@ local coll = {
             },
         },
         keyword = "48-57,-,a-z,A-Z,.,_,=",
+        handle_sys_clipboard_paste = true,
     },
 }
 coll.__index = coll
@@ -73,8 +80,10 @@ coll.__index = coll
 --- @param bufnr number onlysearch buffer number
 --- @param keyword string used for iskeyword option
 local set_option = function(winid, bufnr, keyword)
-    local win_opt = { scope = "local", win = winid }
-    local buf_opt = { buf = bufnr }
+  local win_opt = { scope = "local", win = winid }
+  local buf_opt = { buf = bufnr }
+  -- set buffer name --
+  vim.api.nvim_buf_set_name(bufnr, onlysearch_buf_name)
   -- window options --
   vim.api.nvim_set_option_value('number', false, win_opt)
   vim.api.nvim_set_option_value('relativenumber', false, win_opt)
@@ -149,6 +158,11 @@ function coll:new(opts)
     opts = opts or {}
     coll.config = vim.tbl_deep_extend('force', coll.config, opts)
 
+    if type(coll.config.buf_name) == "string"
+        and #coll.config.buf_name > 1 then
+        onlysearch_buf_name = coll.config.buf_name
+    end
+
     return coll
 end
 
@@ -181,6 +195,9 @@ function coll:open()
             self.winid = nil
             self.bufnr = nil
             self:resume_query()
+            if self.config.handle_sys_clipboard_paste then
+                vim.paste = self.orignal_vim_dot_paste
+            end
         end,
     })
     -- search autocmd
@@ -246,6 +263,9 @@ function coll:open()
     for k, f in pairs(self.config.keymaps.visual) do
         vim.keymap.set("x", k, function() action[f](self, true) end, map_opts)
     end
+    if self.config.handle_sys_clipboard_paste then
+        vim.paste = action.limit_sys_clipboard_paste(self, onlysearch_buf_name)
+    end
 end
 
 --- Close onlysearch window
@@ -253,6 +273,9 @@ function coll:close()
     win_delete(self.winid, true, true)
     self.winid = nil
     self.bufnr = nil
+    if self.config.handle_sys_clipboard_paste then
+        vim.paste = self.orignal_vim_dot_paste
+    end
 end
 
 --- @class Handler

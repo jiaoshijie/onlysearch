@@ -156,6 +156,28 @@ action.limit_paste = function(coll, key)
     end
 end
 
+--- limit user paste from system clipboard
+--- @param coll Onlysearch
+--- @param os_buf_name string
+action.limit_sys_clipboard_paste = function(coll, os_buf_name)
+    return function(lines, phase)
+        local buf_name = vim.fn.bufname()
+        if buf_name and buf_name == os_buf_name then
+            -- 1. if not editable canceling this operation
+            if not action.is_editable(coll) then
+                print("WARNING: You can't make changes in results.")
+                return false
+            end
+            -- 2. if the content contain multiple lines canceling this operation
+            if (phase ~= -1 or #lines > 1) then
+                print("WARNING: Paste multiple lines are not allowed in onlysearch buffer")
+                return false
+            end
+        end
+        return coll.orignal_vim_dot_paste(lines, phase)
+    end
+end
+
 --- @param coll Onlysearch
 --- @param lnum number
 --- @return string
