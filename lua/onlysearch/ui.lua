@@ -109,8 +109,8 @@ function ui:render_filename(bufnr, lnum, line)
     end
     vim.api.nvim_buf_set_lines(bufnr, lnum, lnum, false, { "", line })
     lnum = lnum + 1
-    vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchFilename",
-        lnum, 0, vim.api.nvim_strwidth(line))
+    vim.hl.range(bufnr, self.ctx.ns_id, "OnlysearchFilename", { lnum, 0 },
+        { lnum, vim.api.nvim_strwidth(line) }, { inclusive = false })
 
     return lnum + 1
 end
@@ -131,15 +131,15 @@ function ui:render_match_line(bufnr, lnum, mlnum, line, subms)
     vim.api.nvim_buf_set_lines(bufnr, lnum, lnum, false, { mlnum .. ':' .. line })
     local len = vim.api.nvim_strwidth('' .. mlnum)
 
-    vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchMatchLNum",
-        lnum, 0, len)
+    vim.hl.range(bufnr, self.ctx.ns_id, "OnlysearchMatchLNum", { lnum, 0 },
+        { lnum, len }, { inclusive = false })
     len = len + 1  -- len(':')
 
     if subms then
         for _, val in ipairs(subms) do
             if len + val.s < 255 and len + val.e < 255 then
-                vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchMatchCtx",
-                    lnum, len + val.s, len + val.e)
+                vim.hl.range(bufnr, self.ctx.ns_id, "OnlysearchMatchCtx",
+                    { lnum, len + val.s }, { lnum, len + val.e }, { inclusive = false })
             end
         end
     end
@@ -155,13 +155,12 @@ function ui:toggle_sel_line(bufnr, lnum, is_sel)
         self.ctx.sel_ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_sel_ns")
     end
     if is_sel then
-        -- BUG(jiaoshijie): if col_end set to -1, nvim will draw the highlight
-        -- be {lnum, col_start = 0} and {lnum + 1, col_end = 0} this will
-        -- cause a problem when clearing highlight, so for now using 512 instead of -1
-        vim.api.nvim_buf_add_highlight(bufnr, self.ctx.sel_ns_id, "OnlysearchSelectedLine",
-            lnum, 0, 512)
+        -- FIXME(neovim): If `finish` is set to {lnum, -1}, there’s a bug:
+        -- when two adjacent lines are highlighted, clearing the lower one also
+        -- clears the upper one. So the `finish` must be set to { lnum + 1, 0 }.
+        vim.hl.range(bufnr, self.ctx.sel_ns_id, "OnlysearchSelectedLine",
+            { lnum, 0 }, { lnum + 1, 0 }, { inclusive = false })
     else
-        -- BUG(jiaoshijie): maybe neovim has bug
         vim.api.nvim_buf_clear_namespace(bufnr, self.ctx.sel_ns_id, lnum, lnum + 1)
     end
 end
@@ -189,8 +188,8 @@ function ui:render_error(bufnr, lnum, line)
         self.ctx.ns_id = vim.api.nvim_create_namespace("onlysearch_ctx_ns")
     end
     vim.api.nvim_buf_set_lines(bufnr, lnum, lnum, false, { line })
-    vim.api.nvim_buf_add_highlight(bufnr, self.ctx.ns_id, "OnlysearchError",
-        lnum, 0, -1)
+    vim.hl.range(bufnr, self.ctx.ns_id, "OnlysearchError", { lnum, 0 },
+        { lnum, -1 }, { inclusive = false })
 
     return lnum + 1
 end
