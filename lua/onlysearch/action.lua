@@ -6,19 +6,17 @@ local action = {}
 --- @return number the window id that the bufnr will be placed at
 local chose_window = function(winid)
     -- 1. first try to use the last window to open the file
-    local lwinid = vim.fn.win_getid()
     local target_winid = vim.fn.win_getid(vim.fn.winnr('#'))
-    if target_winid ~= 0 and target_winid ~= lwinid then
+    if target_winid ~= 0 then
         return target_winid
     end
     -- 2. try to use the `winid` provided by the caller to open the file
-    if winid and vim.fn.win_id2win(winid) ~= 0 then
+    if type(winid) == "number" and vim.api.nvim_win_is_valid(winid) then
         return winid
     end
     -- 3. if the first window is not the onlysearch window,
     --    use the first window(window number is 1) in the current tabpage to open the file
     -- 4. else try to use other window number to open the file
-    target_winid = vim.fn.win_getid(1)
     if vim.fn.winnr() ~= 1 then
         return vim.fn.win_getid(1)
     else
@@ -29,6 +27,7 @@ local chose_window = function(winid)
     end
     -- 5. finally, creating a new window open the file
     --    the onlysearch window is the only window in this tabpage
+    -- TODO: using `nvim_open_win` instead
     vim.cmd("silent keepalt vertical split")
 
     return vim.fn.win_getid()
@@ -39,7 +38,7 @@ end
 --- @param lnum number
 local open_file = function(winid, abs_path, lnum)
     vim.fn.win_gotoid(chose_window(winid))
-    vim.cmd('edit ' .. abs_path)
+    vim.cmd('edit ' .. vim.fn.fnameescape(abs_path))
     if lnum then
         pcall(vim.api.nvim_win_set_cursor, 0, { lnum, 0 })
     else
@@ -61,7 +60,7 @@ local gen_abs_path = function(cwd, filename)
         abs_path = vim.fn.expand(cwd) .. '/' .. filename
     end
 
-    return vim.fn.fnameescape(abs_path)
+    return abs_path
 end
 
 --- @param coll Onlysearch
@@ -351,7 +350,7 @@ action.resume_last_query = function(coll)
     assert(coll ~= nil)
     local query = coll:resume_query()
     if not query then
-        print("No pervious query available, do nothing")
+        print("WARNING: No pervious query available, do nothing")
         return
     end
 

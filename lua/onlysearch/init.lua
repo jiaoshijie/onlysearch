@@ -10,7 +10,7 @@ function onlysearch.open()
     if not onlysearch.coll.bufnr then
         onlysearch.coll:open()
     else
-        print("WARN: OnlySearch window has been opened!!!")
+        print("WARNING: OnlySearch window has been opened!!!")
     end
 end
 

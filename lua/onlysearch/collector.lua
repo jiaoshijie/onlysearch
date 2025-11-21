@@ -80,7 +80,7 @@ coll.__index = coll
 --- @param bufnr number onlysearch buffer number
 --- @param keyword string used for iskeyword option
 local set_option = function(winid, bufnr, keyword)
-  local win_opt = { scope = "local", win = winid }
+  local win_opt = { win = winid }
   local buf_opt = { buf = bufnr }
   -- set buffer name --
   vim.api.nvim_buf_set_name(bufnr, onlysearch_buf_name)
@@ -100,7 +100,7 @@ local set_option = function(winid, bufnr, keyword)
   -- buf options --
   vim.api.nvim_set_option_value('bufhidden', 'wipe', buf_opt) -- NOTE: or 'delete'
   vim.api.nvim_set_option_value('buflisted', false, buf_opt)
-  vim.api.nvim_set_option_value('buftype', 'nowrite', buf_opt)
+  vim.api.nvim_set_option_value('buftype', 'nofile', buf_opt)
   vim.api.nvim_set_option_value('swapfile', false, buf_opt)
   vim.api.nvim_set_option_value('filetype', 'onlysearch', buf_opt)
   vim.api.nvim_set_option_value('iskeyword', keyword, buf_opt)
@@ -168,6 +168,11 @@ end
 
 --- Open onlysearch window
 function coll:open()
+    if vim.fn.win_gettype() == "command" then
+        print("WARNING: Unable to open from command-line window: `:h E11`")
+        return
+    end
+
     if self.bufnr == nil then
         self.target_winid = vim.fn.win_getid()
         vim.cmd("silent keepalt " .. self.config.open_cmd)
