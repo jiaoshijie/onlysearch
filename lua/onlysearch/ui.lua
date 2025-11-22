@@ -4,10 +4,8 @@ local utils = require('onlysearch.utils')
 --- @field lnum number
 --- @field text string  the text to be displayed
 --- @field hl string  the highlight group name
---- @field ignore boolean don't render this item
 
 --- @class Headers
---- @field search HeaderInfo
 --- @field search_path HeaderInfo
 --- @field extra_flags HeaderInfo
 --- @field filters HeaderInfo
@@ -33,29 +31,20 @@ local ui = {
     vt = {
         ns_id = nil,
         header = {
-            search = {
-                lnum = 0,
-                text = "Search:",
-                hl = "OnlysearchHeaderSearch",
-                ignore = true,
-            },
             search_path = {
                 lnum = 1,
                 text = "Search Path:",
                 hl = "OnlysearchHeaderPaths",
-                ignore = false,
             },
             extra_flags = {
                 lnum = 2,
                 text = "Extra Flags:",
                 hl = "OnlysearchHeaderFlags",
-                ignore = false,
             },
             filters = {
                 lnum = 3,
                 text = "Filters:",
                 hl = "OnlysearchHeaderFilters",
-                ignore = false,
             }
         }
     }
@@ -70,7 +59,7 @@ function ui:render_header(bufnr, name)
         self.vt.ns_id = vim.api.nvim_create_namespace("onlysearch_vt_ns")
     end
     local buf_line_number = vim.api.nvim_buf_line_count(bufnr)
-    local header_number = utils.table_numbers(self.vt.header)
+    local header_number = utils.table_numbers(self.vt.header) + 1  -- 1: search line
     if buf_line_number < header_number then
         local lines = {}
         for _ = 1, header_number - buf_line_number, 1 do
@@ -79,10 +68,9 @@ function ui:render_header(bufnr, name)
         vim.api.nvim_buf_set_lines(bufnr, -1, -1, false, lines)
     end
 
-    local header_count = 0
+    local header_count = 1  -- 1: search line
     for _, v in pairs(self.vt.header) do
         header_count = header_count + 1
-        if v.ignore then goto continue end
         if v.lnum == 2 and name then  -- NOTE: `extra flags` virtual text line number
             v.text = "Extra Flags(" .. name .. "):"
         end
@@ -92,7 +80,6 @@ function ui:render_header(bufnr, name)
             virt_lines_above = true,
             right_gravity = false,
         })
-        ::continue::
     end
 
     return header_count
