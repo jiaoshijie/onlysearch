@@ -94,7 +94,7 @@ local set_option = function(winid, bufnr, keyword)
   vim.api.nvim_set_option_value('signcolumn', 'no', win_opt)
   vim.api.nvim_set_option_value('colorcolumn', '0', win_opt)
   vim.api.nvim_set_option_value('foldenable', false, win_opt)
-  vim.api.nvim_set_option_value('foldexpr', 'onlysearch#foldexpr()', win_opt)
+  vim.api.nvim_set_option_value('foldexpr', [[v:lua.__jsj_onlysearch_foldexpr(v:lnum)]], win_opt)
   vim.api.nvim_set_option_value('foldmethod', 'expr', win_opt)
   vim.api.nvim_set_option_value('winfixbuf', true, win_opt)
   -- buf options --
