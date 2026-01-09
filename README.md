@@ -8,6 +8,12 @@ A nvim plugin that provides a beautiful search result views and powerful functio
 
 - [ ] refactor: make the structure more simple(a.k.a. do not use the lua metatable)
 - [ ] support more history
+  + Maybe make the query history lifetime much longer (the neovim process lifetime)
+  + Do not automatically save query histroy, Using a keymap to save it, print message at cmdline
+  + When saving, check the duplication
+  + two floating window, show the saved histories.
+- [ ] when toggle `OS`, the the OS has already been opened, but not in this tab page,
+      move the window to the current tabpage (~~don't disable it then reopen it~~).
 
 ### License
 
