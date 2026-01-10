@@ -1,33 +1,33 @@
 local kit = require('onlysearch.kit')
 local _M = {}
 
--- TODO: using -Z instead
+local parse_grep_output = function(data)
+    local b, e = string.find(data, '\0')
+    if b == nil then return nil end
+
+    local p = string.sub(data, 1, b - 1)
+    local l, c = string.match(string.sub(data, e + 1), "(%d+):(.*)")
+    return p, l, c
+end
+
+-- NOTE: GNU grep --help/--version will never output a ASCII NUL char
+-- 'main.c\012:abcdhjkl'
 _M.parse_output = function(data)
-    -- NOTE: if has a filename like `main:12:34:ab.c`, this regexp will fail
-    local _, _, p, l, c = string.find(data, [[([^:]+):(%d+):(.*)]])
+    local p, l, c = parse_grep_output(data)
 
-    l = tonumber(l)
-    if l == nil then
-        -- Do not deal with `-C number` option
-        -- Try to parse -C number content
-        if data == "--" then
-            return nil
-        end
-        local _, _, ll = string.find(data, [[[^-]+-(%d+)-.*]])
-        ll = tonumber(ll)
-        if ll ~= nil then
-            return nil
-        end
-
-        -- Now suppose data is raw content(grep --help)
-        return data
+    if p ~= nil then
+        -- `-C number` option, just return nil
+        -- 'main.c\012-abcdhjkl'
+        if l == nil then return nil end
+        return { p = p, c = c, l = tonumber(l) }
     end
 
-    if p == nil then
-        return nil
-    end
+    -- p == nil
+    -- `-C number` option, just return nil
+    if data == "--" then return nil end
 
-    return { p = p, c = c, l = l }
+    -- raw data
+    return data
 end
 
 _M.parse_filters = function(args, filters)

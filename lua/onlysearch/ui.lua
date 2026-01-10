@@ -77,7 +77,7 @@ function _M.render_match_line(rt_ctx, lnum, mlnum, line, subms)
     if subms then
         for _, val in ipairs(subms) do
             if len + val.s < 255 and len + val.e < 255 then
-                vim.hl.range(rt_ctx.bufnr, rt_ctx.ns.result_id, "OnlysearchMatchCtx",
+                vim.hl.range(rt_ctx.bufnr, ns.result_id, "OnlysearchMatchCtx",
                     { lnum, len + val.s }, { lnum, len + val.e }, { inclusive = false })
             end
         end

@@ -60,6 +60,7 @@ local ctx = {
         },
     },
     engine_ctx = {
+        id = nil,
         cmd = nil,
         args = nil,
         cwd = nil,
@@ -349,7 +350,6 @@ _M.open = function(open_cmd)
     if not validate_env() then return end
     ctx.env_weak_ref = rt_env
     ctx.cbs_weak_ref = rt_callbacks
-
     set_target_winid()
 
     vim.cmd(fmt("silent keepalt %s", open_cmd or "vnew"))

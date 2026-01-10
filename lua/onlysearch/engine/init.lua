@@ -4,6 +4,7 @@ local uv = vim.uv
 local fmt = string.format
 
 local _M = {}
+local unique_id = 0
 
 --- @param backend table rg_backend or grep_backend
 --- @param query Query
@@ -57,7 +58,7 @@ local process_output = function(e_ctx, raw_data, is_stdout, cb)
         if last_chunk then
             data = last_chunk .. data
         end
-        cb(vim.fn.split(data, '\n'))
+        cb(vim.split(data, '\n', { plain = true, trimempty = false }))
         last_chunk = remained_chunk
     else
         if remained_chunk then
@@ -101,7 +102,6 @@ local uv_is_stdout_stderr_closed = function(uv_ctx)
 end
 
 local uv_shutdown = function(rt_ctx, abort)
-    local rt_cb = rt_ctx.cbs_weak_ref
     local e_ctx = rt_ctx.engine_ctx
     local uv_ctx = e_ctx.uv_ctx
 
@@ -112,8 +112,6 @@ local uv_shutdown = function(rt_ctx, abort)
         -- uv.kill needs pid
         uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGTERM)
     end
-
-    rt_cb.on_finish()
 
     uv.read_stop(uv_ctx.stdout)
     uv.read_stop(uv_ctx.stderr)
@@ -140,7 +138,7 @@ local uv_gracefully_shutdown = function(rt_ctx)
         uv_close_handle(uv_ctx.shutdown_check)
         uv_ctx.shutdown_check = nil
 
-        uv_shutdown(uv_ctx, false)
+        uv_shutdown(rt_ctx, false)
     end)
 end
 
@@ -155,6 +153,11 @@ _M.search = function(rt_ctx)
         kit.echo_err_msg("No backend engine found")
         return
     end
+
+    local id = unique_id
+    unique_id = unique_id + 1
+
+    e_ctx.id = id
     e_ctx.cmd, e_ctx.args = gen_cmd(backend, rt_ctx.query)
     e_ctx.cwd = vim.fn.getcwd()
     e_ctx.is_raw_data = nil
@@ -180,8 +183,10 @@ _M.search = function(rt_ctx)
             if code ~= 0 or signal ~= 0 then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",
                         e_ctx.cmd, code, signal))
+            elseif id == e_ctx.id then
+                rt_cb.on_finish()
             end
-            uv_gracefully_shutdown()
+            uv_gracefully_shutdown(rt_ctx)
         end)
     )
 
@@ -198,7 +203,8 @@ _M.search = function(rt_ctx)
     end
 
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid then return end
+        if not uv_ctx.pid or id ~= e_ctx.id then return end
+
         if err then
             kit.echo_err_msg("libuv reading from stdout failed")
         elseif data then
@@ -212,7 +218,8 @@ _M.search = function(rt_ctx)
         end
     end))
     uv.read_start(uv_ctx.stderr, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid then return end
+        if not uv_ctx.pid or id ~= e_ctx.id then return end
+
         if err then
             kit.echo_err_msg("libuv reading from stderr failed")
         elseif data then

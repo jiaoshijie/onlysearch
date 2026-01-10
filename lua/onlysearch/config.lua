@@ -58,7 +58,7 @@ _M.engines_cfg = {
         },
         grep = {
             '--color=never',
-            '--r', -- recursive
+            '-r', -- recursive
             '-I',  -- don't search binary file
             '-n', -- show line number
             '-H',  -- always show filename

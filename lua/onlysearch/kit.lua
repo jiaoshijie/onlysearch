@@ -43,30 +43,30 @@ end
 
 --- @param bufnr number
 _M.buf_delete = function(bufnr)
-  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
-      return
-  end
+    if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
+        return
+    end
 
-  -- Suppress the buffer deleted message for those with &report<2
-  local start_report = vim.o.report
-  vim.o.report = 2
+    -- Suppress the buffer deleted message for those with &report<2
+    local start_report = vim.o.report
+    vim.o.report = 2
 
-  vim.api.nvim_buf_delete(bufnr, { force = true })
+    vim.api.nvim_buf_delete(bufnr, { force = true })
 
-  vim.o.report = start_report
+    vim.o.report = start_report
 end
 
 --- @param win_id number
 --- @param force boolean see :h nvim_win_close
 _M.win_delete = function(win_id, force)
-  if not win_id or not vim.api.nvim_win_is_valid(win_id) then
-    return
-  end
+    if not win_id or not vim.api.nvim_win_is_valid(win_id) then
+        return
+    end
 
-  local save_ei = vim.o.eventignore
-  vim.o.eventignore = "all"
-  vim.api.nvim_win_close(win_id, force)
-  vim.o.eventignore = save_ei
+    local save_ei = vim.o.eventignore
+    vim.o.eventignore = "all"
+    vim.api.nvim_win_close(win_id, force)
+    vim.o.eventignore = save_ei
 end
 
 --- Scan a path string and split it into multiple paths.
@@ -108,22 +108,9 @@ _M.scan_paths = function(s_path)
 end
 
 --- @param str string
---- @param substr string
---- @return number?
-local str_last_pos = function(str, substr)
-  local pos = vim.fn.strridx(str, substr)
-  if pos == -1 then
-    return nil
-  end
-
-  return pos + 1  -- make it 1-based index
-end
-
-
---- @param str string
 --- @return string?, string?
 _M.split_last_chunk = function(str)
-    local pos  = str_last_pos(str, '\n')
+    local pos = string.find(str, '\n', -1, true)
     if pos then
         -- The two string returned don't contain the last newline character
         return str:sub(1, pos - 1), #str:sub(pos + 1) > 0 and str:sub(pos + 1) or nil
