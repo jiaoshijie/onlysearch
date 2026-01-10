@@ -2,6 +2,7 @@ local cfg = require("onlysearch.config")
 local kit = require("onlysearch.kit")
 local action = require("onlysearch.action")
 local ui = require("onlysearch.ui")
+local engine = require("onlysearch.engine")
 local fmt = string.format
 
 local _M = {}
@@ -60,7 +61,20 @@ local ctx = {
     },
     engine_ctx = {
         cmd = nil,
+        args = nil,
         cwd = nil,
+        is_raw_data = nil,        -- boolean
+        stdout_last_chunk = nil,  -- string?
+        stderr_last_chunk = nil,  -- string?
+
+        -- uv
+        uv_ctx = {
+            pid = nil, -- number
+            handle = nil, -- uv_process_t
+            stdout = nil, -- uv_pipe_t
+            stderr = nil, -- uv_pipe_t
+            shutdown_check = nil, -- uv_check_t
+        }
     },
 
     -- TODO: maybe make the query hist out of the ctx
@@ -133,9 +147,9 @@ rt_callbacks.on_error = function(item)
         ui.clear_result(ctx)
         ui.render_sep(ctx, true)
 
-        assert(ctx.engine_ctx.cmd ~= nil)
         pctx.cur_lnum = ui.render_error(ctx, pctx.cur_lnum, "")
-        pctx.cur_lnum = ui.render_error(ctx, pctx.cur_lnum, "")
+        pctx.cur_lnum = ui.render_error(ctx, pctx.cur_lnum,
+            ctx.engine_ctx.cmd .. ' ' .. table.concat(ctx.engine_ctx.args, ' '))
         pctx.cur_lnum = ui.render_error(ctx, pctx.cur_lnum, "")
     end
 
@@ -349,18 +363,15 @@ _M.open = function(open_cmd)
     -- NOTE: set_keymaps must below set_limitation, otherwise the set_limitation may override the user defined keymaps
     set_keymaps()
 
-    -- TODO: engine_ctx
-    ctx.engine_search_fn = function()
-        -- TODO: need using real function instead
-        print("Fake search function")
-    end
+    ctx.engine_search_fn = engine.search
 
     ui.render_header(ctx)
 end
 
 _M.close = function()
     if not _M.is_opend() then return end
-    -- TODO: engine clear should go first
+
+    engine.close(ctx)
 
     ctx.env_weak_ref = nil
     ctx.target_winid = nil

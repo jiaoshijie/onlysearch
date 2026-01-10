@@ -1,0 +1,51 @@
+local kit = require('onlysearch.kit')
+local _M = {}
+
+-- TODO: using -Z instead
+_M.parse_output = function(data)
+    -- NOTE: if has a filename like `main:12:34:ab.c`, this regexp will fail
+    local _, _, p, l, c = string.find(data, [[([^:]+):(%d+):(.*)]])
+
+    l = tonumber(l)
+    if l == nil then
+        -- Do not deal with `-C number` option
+        -- Try to parse -C number content
+        if data == "--" then
+            return nil
+        end
+        local _, _, ll = string.find(data, [[[^-]+-(%d+)-.*]])
+        ll = tonumber(ll)
+        if ll ~= nil then
+            return nil
+        end
+
+        -- Now suppose data is raw content(grep --help)
+        return data
+    end
+
+    if p == nil then
+        return nil
+    end
+
+    return { p = p, c = c, l = l }
+end
+
+_M.parse_filters = function(args, filters)
+    if filters and #filters > 0 then
+        filters = kit.scan_paths(filters)
+        for _, filter in ipairs(filters) do
+            if string.sub(filter, 1, 1) ~= '!' then
+                table.insert(args, '--include=' .. filter)
+            else
+                filter = string.sub(filter, 2)  -- remove '!'
+                if string.sub(filter, -1) == '/' then
+                    table.insert(args, '--exclude-dir=' .. filter)
+                else
+                    table.insert(args, '--exclude=' .. filter)
+                end
+            end
+        end
+    end
+end
+
+return _M

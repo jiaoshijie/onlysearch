@@ -52,11 +52,26 @@ _M.keymaps_cfg = {
 }
 
 _M.engines_cfg = {
+    mandatory_args = {
+        rg = {
+            '--json',
+        },
+        grep = {
+            '--color=never',
+            '--r', -- recursive
+            '-I',  -- don't search binary file
+            '-n', -- show line number
+            '-H',  -- always show filename
+            '-Z', -- GNU extension, using ascii NUL character instead of `:` to seperate filename
+        },
+    },
     rg = {
+        cmd = "rg",
         args = nil,
         complete = nil,
     },
     grep = {
+        cmd = "grep",
         args = nil,
         complete = nil,
     },
@@ -67,6 +82,19 @@ _M.setup = function(cfg)
     _M.common = vim.tbl_extend('force', _M.common, cfg.common or {})
     _M.keymaps_cfg = vim.tbl_extend('force', _M.keymaps_cfg, cfg.keymaps or {})
     _M.engines_cfg[_M.common.engine] = cfg.engine or {}
+end
+
+--- @return string?
+--- @return table?  NOTE: must not change the table returned directly
+--- @return table?  NOTE: must not change the table returned directly
+_M.get_engine_info = function()
+    local engine = _M.common.engine
+    local engine_cfg = _M.engines_cfg[engine]
+    if not engine_cfg then
+        return nil
+    end
+
+    return engine_cfg.cmd, engine_cfg.args, _M.engines_cfg.mandatory_args[engine]
 end
 
 return _M

@@ -69,4 +69,67 @@ _M.win_delete = function(win_id, force)
   vim.o.eventignore = save_ei
 end
 
+--- Scan a path string and split it into multiple paths.
+--- @param s_path string
+--- @return string[]
+_M.scan_paths = function(s_path)
+    local paths = {}
+    local path = ''
+    local escape_char = '\\'
+
+    local i = 1
+    while i <= #s_path do
+        local char = s_path:sub(i, i)
+        if char == escape_char then
+            -- Escape next character
+            if i < #s_path then
+                i = i + 1
+                path = path .. s_path:sub(i, i)
+            end
+        elseif char:match('%s') then
+            -- Unescaped whitespace: split here.
+            if path ~= '' then
+                table.insert(paths, path)
+            end
+            path = ''
+            i = i + s_path:sub(i, -1):match('^%s+()') - 2
+        else
+            path = path .. char
+        end
+
+        i = i + 1
+    end
+
+    if #path > 0 then
+        table.insert(paths, path)
+    end
+
+    return paths
+end
+
+--- @param str string
+--- @param substr string
+--- @return number?
+local str_last_pos = function(str, substr)
+  local pos = vim.fn.strridx(str, substr)
+  if pos == -1 then
+    return nil
+  end
+
+  return pos + 1  -- make it 1-based index
+end
+
+
+--- @param str string
+--- @return string?, string?
+_M.split_last_chunk = function(str)
+    local pos  = str_last_pos(str, '\n')
+    if pos then
+        -- The two string returned don't contain the last newline character
+        return str:sub(1, pos - 1), #str:sub(pos + 1) > 0 and str:sub(pos + 1) or nil
+    end
+
+    return nil, str
+end
+
 return _M
