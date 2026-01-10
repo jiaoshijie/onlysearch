@@ -3,8 +3,13 @@ local fmt = string.format
 
 --- @param msg string
 _M.echo_err_msg = function(msg)
-    vim.api.nvim_echo({ { fmt("ffmk: %s", msg) } }, true, { err = true })
+    vim.api.nvim_echo({ { fmt("OnlySearch: %s", msg) } }, true, { err = true })
 end
+
+_M.echo_info_msg = function(msg)
+    vim.api.nvim_echo({ { fmt("OnlySearch: %s", msg) } }, true, { err = false })
+end
+
 
 --- @return number? major
 --- @return number? minor
@@ -38,8 +43,7 @@ end
 
 --- @param bufnr number
 _M.buf_delete = function(bufnr)
-  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr)
-      or not vim.api.nvim_buf_is_loaded(bufnr) then
+  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
       return
   end
 
@@ -47,7 +51,10 @@ _M.buf_delete = function(bufnr)
   local start_report = vim.o.report
   vim.o.report = 2
 
+  local save_ei = vim.o.eventignore
+  vim.o.eventignore = "all"
   vim.api.nvim_buf_delete(bufnr, { force = true })
+  vim.o.eventignore = save_ei
 
   vim.o.report = start_report
 end

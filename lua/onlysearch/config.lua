@@ -12,9 +12,11 @@ _M.common = {
 }
 
 _M.ui_cfg = {
+    sep_extmark_lnum = 3,  -- 0-based index
+    header_lines = 4,  -- TODO: maybe it should not be here
     header = {
         search_path = {
-            lnum = 1,
+            lnum = 1,  -- 0-based index
             text = " Search Path: ",
             hl = "OnlysearchHeaderPaths",
         },
