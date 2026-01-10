@@ -4,34 +4,45 @@ local cfg = require("onlysearch.config")
 
 local _M = { limit = {} }
 
+--- @param winid number
+--- @return boolean
+local is_valid_target_winid = function(winid)
+    if winid ~= 0 and vim.api.nvim_win_is_valid(winid) and kit.winid_in_tab(winid)
+        and not vim.api.nvim_get_option_value('winfixbuf', { win = winid }) then
+        return true
+    end
+    return false
+end
+
 --- @param winid number the window id that the user is in when open the onlysearch window
 --- @return number the window id that the bufnr will be placed at
 local chose_window = function(winid)
     -- 1. first try to use the last window to open the file
     local target_winid = vim.fn.win_getid(vim.fn.winnr('#'))
-    if target_winid ~= 0 then
+    if is_valid_target_winid(target_winid) then
         return target_winid
     end
     -- 2. try to use the `winid` provided by the caller to open the file
-    if type(winid) == "number"
-        and vim.api.nvim_win_is_valid(winid)
-        and kit.winid_in_tab(winid) then
+    if is_valid_target_winid(winid) then
         return winid
     end
     -- 3. if the first window is not the onlysearch window,
     --    use the first window(window number is 1) in the current tabpage to open the file
     -- 4. else try to use other window number to open the file
     if vim.fn.winnr() ~= 1 then
-        return vim.fn.win_getid(1)
+        winid =  vim.fn.win_getid(1)
     else
         target_winid = vim.fn.win_getid(2)
         if target_winid ~= 0 then
-            return target_winid
+            winid = target_winid
         end
     end
+    if is_valid_target_winid(winid) then
+        return winid
+    end
+
     -- 5. finally, creating a new window open the file
     --    the onlysearch window is the only window in this tabpage
-    -- TODO: using `nvim_open_win` instead
     vim.cmd("silent keepalt vertical split")
 
     return vim.fn.win_getid()

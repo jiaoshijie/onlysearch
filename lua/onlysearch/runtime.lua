@@ -189,20 +189,20 @@ local validate_env = function()
     -- 4. if rg/grep version not match
     if rt_env.engine_checked then return true end
 
-    if cfg.commen.engine == "rg" then
+    if cfg.common.engine == "rg" then
         local major, _ = kit.get_cmd_version('rg', '--version', '(%d+)%.(%d+)%.%d+')
         if major == nil or major < 13 then
             kit.echo_err_msg("ripgrep version is below 13.0.0")
             return false
         end
-    elseif cfg.commen.engine == "grep" then
+    elseif cfg.common.engine == "grep" then
         local major, minor = kit.get_cmd_version('grep', '--version', '%(GNU grep%) (%d+)%.(%d+)')
         if major == nil or major < 3 or (major == 3 and minor < 7) then
             kit.echo_err_msg("grep is not GNU grep or version is below 3.7")
             return false
         end
     else
-        kit.echo_err_msg(fmt("search engine `%s` is not supported!", cfg.commen.engine))
+        kit.echo_err_msg(fmt("search engine `%s` is not supported!", cfg.common.engine))
         return false
     end
     rt_env.engine_checked = true
@@ -243,7 +243,7 @@ local set_option = function()
 end
 
 local set_events = function(ev_group)
-    vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
+    vim.api.nvim_create_autocmd({ "WinClosed" }, {
         buffer = ctx.bufnr,
         group = ev_group,
         callback = function() _M.close() end,
@@ -321,6 +321,7 @@ local set_limitation = function(ev_group)
     vim.keymap.set({'n', 'v'}, 'J', 'j', map_opts)
     vim.keymap.set({'n', 'v'}, 'gJ', 'j', map_opts)
     if cfg.common.handle_sys_clipboard_paste then
+        ctx.orignal_vim_dot_paste = vim.paste
         vim.paste = action.limit.sys_clipboard_paste(ctx)
     end
 end
@@ -330,22 +331,23 @@ _M.is_opend = function()
     return ctx.bufnr ~= nil
 end
 
-_M.open = function()
+_M.open = function(open_cmd)
     if not validate_env() then return end
     ctx.env_weak_ref = rt_env
     ctx.cbs_weak_ref = rt_callbacks
 
     set_target_winid()
 
-    vim.cmd("silent keepalt new")
+    vim.cmd(fmt("silent keepalt %s", open_cmd or "vnew"))
     ctx.bufnr = vim.fn.bufnr()
     ctx.winid = vim.fn.bufwinid(ctx.bufnr)
     set_option()
-    set_keymaps()
 
     local ev_group = vim.api.nvim_create_augroup("onlysearch_rt_event", { clear = true })
     set_events(ev_group)
     set_limitation(ev_group)
+    -- NOTE: set_keymaps must below set_limitation, otherwise the set_limitation may override the user defined keymaps
+    set_keymaps()
 
     -- TODO: engine_ctx
     ctx.engine_search_fn = function()

@@ -12,6 +12,7 @@ A nvim plugin that provides a beautiful search result views and powerful functio
   + Do not automatically save query histroy, Using a keymap to save it, print message at cmdline
   + When saving, check the duplication
   + two floating window, show the saved histories.
+- [ ] why `vertical Os` and `tab Os` not work
 
 ### License
 

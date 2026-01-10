@@ -51,10 +51,7 @@ _M.buf_delete = function(bufnr)
   local start_report = vim.o.report
   vim.o.report = 2
 
-  local save_ei = vim.o.eventignore
-  vim.o.eventignore = "all"
   vim.api.nvim_buf_delete(bufnr, { force = true })
-  vim.o.eventignore = save_ei
 
   vim.o.report = start_report
 end
