@@ -287,9 +287,6 @@ local set_keymaps = function()
     for k, f in pairs(cfg.keymaps_cfg.normal) do
         vim.keymap.set("n", k, function() action[f](ctx) end, map_opts)
     end
-    for k, f in pairs(cfg.keymaps_cfg.insert) do
-        vim.keymap.set("i", k, function() action[f](ctx) end, map_opts)
-    end
     for k, f in pairs(cfg.keymaps_cfg.visual) do
         vim.keymap.set("x", k, function() action[f](ctx, true) end, map_opts)
     end
