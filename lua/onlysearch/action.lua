@@ -277,22 +277,15 @@ _M.toggle_lines = function(rt_ctx, is_visual)
     end
 end
 
--- TODO: just assign nil to selected_items, and clear the ui view
 --- @param rt_ctx table runtime_ctx
 _M.clear_all_selected_items = function(rt_ctx)
     assert(rt_ctx ~= nil)
 
     if not rt_ctx.selected_items then return end
 
-    local lnums = {}
-    -- NOTE: Maybe deleting while iterating is not a problem in lua, but i don't want do it
-    for lnum, _ in pairs(rt_ctx.selected_items) do
-        table.insert(lnums, lnum)
-    end
-
-    for _, lnum in ipairs(lnums) do
-        toggle_single_line(rt_ctx, lnum)
-    end
+    rt_ctx.selected_items = {}
+    local ns = rt_ctx.env_weak_ref.ns
+    vim.api.nvim_buf_clear_namespace(rt_ctx.bufnr, ns.select_id, 0, -1)
 end
 
 --- @param rt_ctx table runtime_ctx
