@@ -249,7 +249,7 @@ _M.add = function(rt_ctx)
     end
 
     table.insert(qh_arr, 1, rt_ctx.query)
-    kit.echo_info_msg("query added to history")
+    kit.echo_info_msg(fmt("query `%s` added to history", rt_ctx.query.text))
 end
 
 --- This function can be called in any window

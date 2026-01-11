@@ -2,7 +2,6 @@ local ui = require("onlysearch.ui")
 local kit = require("onlysearch.kit")
 local cfg = require("onlysearch.config")
 local query_hist = require("onlysearch.query_hist")
-local fmt = string.format
 
 local _M = { limit = {} }
 
@@ -92,11 +91,7 @@ end
 --- @param rt_ctx table runtime_ctx
 _M.search = function(rt_ctx)
     local lines = vim.api.nvim_buf_get_lines(rt_ctx.bufnr, 0, cfg.ui_cfg.header_lines, false)
-    if #lines[1] < 3 then
-        rt_ctx.query = nil
-        kit.echo_info_msg("Pattern length is less than 3, no search performed and last query cleared")
-        return
-    end
+    if #lines[1] < 3 then return end
 
     -- Assign an new table object to rt_ctx.query
     rt_ctx.query = {
@@ -321,36 +316,36 @@ _M.send2qf = function(rt_ctx)
     end
 end
 
--- TODO: maybe using 'omnifunc' option instead of remap a keymap
---- @param rt_ctx table runtime_ctx
-_M.omnifunc = function(rt_ctx)
-    local _ = rt_ctx
-
-    local engine = cfg.common.engine
-    local engine_cfg = cfg.engines_cfg[engine]
-
-    if not engine_cfg or not engine_cfg.complete or #engine_cfg.complete == 0 then
-        return
-    end
-
-    local cursor = vim.api.nvim_win_get_cursor(0)
-    if cursor[1] ~= cfg.ui_cfg.header.extra_flags.lnum + 1 then
-        print("WARNING: Only complete flags in line number 3")
-        return
-    end
-
-    local cursor_col = cursor[2] + 1  -- convert 0-based to 1-based column
-    local line = vim.api.nvim_get_current_line()
-    local line_to_cursor = line:sub(1, cursor_col)
-    local start_boundary = vim.fn.match(line_to_cursor, '\\k*$') + 1  -- `+1` convert to 1-based index
-    local prefix = line:sub(start_boundary, cursor_col)
-
-    local items = vim.tbl_filter(function(item)
-        return item.word and vim.startswith(item.word, prefix)
-    end, engine_cfg.complete)
-
-    vim.fn.complete(start_boundary, items)
-end
+-- NOTE: using omnifunc(C-x C-o) instead
+-- --- @param rt_ctx table runtime_ctx
+-- _M.omnifunc = function(rt_ctx)
+--     local _ = rt_ctx
+--
+--     local engine = cfg.common.engine
+--     local engine_cfg = cfg.engines_cfg[engine]
+--
+--     if not engine_cfg or not engine_cfg.complete or #engine_cfg.complete == 0 then
+--         return
+--     end
+--
+--     local cursor = vim.api.nvim_win_get_cursor(0)
+--     if cursor[1] ~= cfg.ui_cfg.header.extra_flags.lnum + 1 then
+--         print("WARNING: Only complete flags in line number 3")
+--         return
+--     end
+--
+--     local cursor_col = cursor[2] + 1  -- convert 0-based to 1-based column
+--     local line = vim.api.nvim_get_current_line()
+--     local line_to_cursor = line:sub(1, cursor_col)
+--     local start_boundary = vim.fn.match(line_to_cursor, '\\k*$') + 1  -- `+1` convert to 1-based index
+--     local prefix = line:sub(start_boundary, cursor_col)
+--
+--     local items = vim.tbl_filter(function(item)
+--         return item.word and vim.startswith(item.word, prefix)
+--     end, engine_cfg.complete)
+--
+--     vim.fn.complete(start_boundary, items)
+-- end
 
 --- @param rt_ctx table runtime_ctx
 _M.query_hist_open = function(rt_ctx)

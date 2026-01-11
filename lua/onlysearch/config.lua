@@ -52,9 +52,6 @@ _M.keymaps_cfg = {
         ['<leader>qc'] = 'query_hist_close',
         ['<leader>qw'] = 'query_hist_win_switch',
     },
-    insert = {
-        ['<C-f>'] = 'omnifunc',
-    },
     visual = {
         ['='] = 'toggle_lines',
     },

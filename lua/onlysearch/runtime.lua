@@ -263,7 +263,7 @@ local set_option = function()
     vim.api.nvim_set_option_value('swapfile', false, buf_opt)
     vim.api.nvim_set_option_value('filetype', 'onlysearch', buf_opt)
     vim.api.nvim_set_option_value('iskeyword', cfg.common.keyword, buf_opt)
-    -- vim.api.nvim_set_option_value('omnifunc', '', buf_opt)
+    vim.api.nvim_set_option_value('omnifunc', [[v:lua.onlysearch_custom_omnifunc]], buf_opt)
 end
 
 local set_events = function(ev_group)
@@ -418,6 +418,30 @@ end
 
 _M.foldexpr = function(lnum)
     return action.foldexpr(ctx, lnum)
+end
+
+_G.onlysearch_custom_omnifunc = function(findstart, base)
+    local engine_cfg = cfg.engines_cfg[cfg.common.engine]
+
+    if not engine_cfg or not engine_cfg.complete or #engine_cfg.complete == 0 then
+        return -3
+    end
+
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    if cursor[1] ~= cfg.ui_cfg.header.extra_flags.lnum + 1 then
+        kit.echo_err_msg("Only complete flags in line number 3")
+        return -3
+    end
+
+    if findstart == 1 then
+        local cursor_col = cursor[2] + 1  -- convert 0-based to 1-based column
+        local line = vim.api.nvim_get_current_line()
+        return vim.fn.match(line:sub(1, cursor_col), '\\k*$')
+    end
+
+    return vim.tbl_filter(function(item)
+        return item.word and vim.startswith(item.word, base)
+    end, engine_cfg.complete)
 end
 
 return _M
