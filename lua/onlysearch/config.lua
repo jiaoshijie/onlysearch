@@ -7,6 +7,11 @@ _M.buf_name = "[OnlySearch]"
 _M.common = {
     engine = "rg",
     search_leave_insert = true,
+    -- NOTE: the history is not persistent, it only lives with the neovim instance
+    -- each neovim instance has it's own query history.
+    -- And it not automatically store, only store the currently query to history
+    -- when user requests.
+    query_history_size = 20,
     keyword = "48-57,-,a-z,A-Z,.,_,=",
     handle_sys_clipboard_paste = true,
 }
@@ -31,7 +36,8 @@ _M.ui_cfg = {
             text = " Filters: ",
             hl = "OnlysearchHeaderFilters",
         }
-    }
+    },
+    -- query_hist = {},
 }
 
 _M.keymaps_cfg = {
@@ -40,8 +46,11 @@ _M.keymaps_cfg = {
         ['='] = 'toggle_lines',
         ['<leader>='] = 'clear_all_selected_items',
         ['Q'] = 'send2qf',
-        ['<leader>r'] = 'resume_last_query',
         ['S'] = 'search',
+        ['<leader>qo'] = 'query_hist_open',
+        ['<leader>qa'] = 'query_hist_add',
+        ['<leader>qc'] = 'query_hist_close',
+        ['<leader>qw'] = 'query_hist_win_switch',
     },
     insert = {
         ['<C-f>'] = 'omnifunc',
@@ -80,7 +89,7 @@ _M.engines_cfg = {
 --- @param cfg table { common = {}, engine = {}, keymaps = {} }
 _M.setup = function(cfg)
     _M.common = vim.tbl_extend('force', _M.common, cfg.common or {})
-    _M.keymaps_cfg = vim.tbl_extend('force', _M.keymaps_cfg, cfg.keymaps or {})
+    _M.keymaps_cfg = vim.tbl_deep_extend('force', _M.keymaps_cfg, cfg.keymaps or {})
     _M.engines_cfg[_M.common.engine] = cfg.engine or {}
 end
 

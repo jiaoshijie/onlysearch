@@ -34,10 +34,7 @@ local gen_cmd = function(backend, query)
     table.insert(args, query.text)
     -- 4. add path
     if query.paths and #query.paths > 0 then
-        local paths = kit.scan_paths(query.paths)
-        for _, dir in ipairs(paths) do
-            table.insert(args, dir)
-        end
+        vim.list_extend(args, kit.scan_paths(query.paths))
     else
         table.insert(args, '.')
     end
@@ -154,10 +151,10 @@ _M.search = function(rt_ctx)
         return
     end
 
-    local id = unique_id
+    local work_id = unique_id
     unique_id = unique_id + 1
 
-    e_ctx.id = id
+    e_ctx.id = work_id
     e_ctx.cmd, e_ctx.args = gen_cmd(backend, rt_ctx.query)
     e_ctx.cwd = vim.fn.getcwd()
     e_ctx.is_raw_data = nil
@@ -183,7 +180,7 @@ _M.search = function(rt_ctx)
             if code ~= 0 or signal ~= 0 then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",
                         e_ctx.cmd, code, signal))
-            elseif id == e_ctx.id then
+            elseif work_id == e_ctx.id then
                 rt_cb.on_finish()
             end
             uv_gracefully_shutdown(rt_ctx)
@@ -203,7 +200,7 @@ _M.search = function(rt_ctx)
     end
 
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid or id ~= e_ctx.id then return end
+        if not uv_ctx.pid or work_id ~= e_ctx.id then return end
 
         if err then
             kit.echo_err_msg("libuv reading from stdout failed")
@@ -218,7 +215,7 @@ _M.search = function(rt_ctx)
         end
     end))
     uv.read_start(uv_ctx.stderr, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid or id ~= e_ctx.id then return end
+        if not uv_ctx.pid or work_id ~= e_ctx.id then return end
 
         if err then
             kit.echo_err_msg("libuv reading from stderr failed")

@@ -1,6 +1,8 @@
 local ui = require("onlysearch.ui")
 local kit = require("onlysearch.kit")
 local cfg = require("onlysearch.config")
+local query_hist = require("onlysearch.query_hist")
+local fmt = string.format
 
 local _M = { limit = {} }
 
@@ -90,8 +92,13 @@ end
 --- @param rt_ctx table runtime_ctx
 _M.search = function(rt_ctx)
     local lines = vim.api.nvim_buf_get_lines(rt_ctx.bufnr, 0, cfg.ui_cfg.header_lines, false)
-    if #lines[1] < 3 then return end
+    if #lines[1] < 3 then
+        rt_ctx.query = nil
+        kit.echo_info_msg("Pattern length is less than 3, no search performed and last query cleared")
+        return
+    end
 
+    -- Assign an new table object to rt_ctx.query
     rt_ctx.query = {
         text = lines[1],
         paths = vim.fn.trim(lines[2]),
@@ -270,6 +277,7 @@ _M.toggle_lines = function(rt_ctx, is_visual)
     end
 end
 
+-- TODO: just assign nil to selected_items, and clear the ui view
 --- @param rt_ctx table runtime_ctx
 _M.clear_all_selected_items = function(rt_ctx)
     assert(rt_ctx ~= nil)
@@ -349,6 +357,26 @@ _M.omnifunc = function(rt_ctx)
     end, engine_cfg.complete)
 
     vim.fn.complete(start_boundary, items)
+end
+
+--- @param rt_ctx table runtime_ctx
+_M.query_hist_open = function(rt_ctx)
+    query_hist.open(rt_ctx)
+end
+
+--- @param rt_ctx table runtime_ctx
+_M.query_hist_add = function(rt_ctx)
+    query_hist.add(rt_ctx)
+end
+
+--- @param rt_ctx table runtime_ctx
+_M.query_hist_close = function(rt_ctx)
+    query_hist.close(rt_ctx)
+end
+
+--- @param rt_ctx table runtime_ctx
+_M.query_hist_win_switch = function(rt_ctx)
+    query_hist.win_switch(rt_ctx)
 end
 
 return _M

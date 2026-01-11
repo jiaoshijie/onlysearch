@@ -36,9 +36,13 @@ local rt_env = {
 -- { on_start, on_finish, on_result, on_error }
 local rt_callbacks = {}
 
+--- @type Query[]
+local query_hist_array = {}
+
 local ctx = {
     env_weak_ref = nil,
     cbs_weak_ref = nil,
+    query_hist_array_ref = nil,
     engine_search_fn = nil,  -- fn(rt_ctx)
 
     bufnr = nil,
@@ -46,6 +50,7 @@ local ctx = {
     target_winid = nil,
     sep_extmark_id = nil,
 
+    query = nil,  -- Query
     lookup_table = nil,
     selected_items = nil,  -- table
 
@@ -78,9 +83,13 @@ local ctx = {
         }
     },
 
-    -- TODO: maybe make the query hist out of the ctx
-    query = nil,  -- Query
-    -- query_hist = nil,      -- a table of `Query`
+    query_hist_ctx = {
+        last_cur_lnum = 0,
+        bufnr = nil,
+        winid = nil,
+        p_bufnr = nil,
+        p_winid = nil,
+    },
 
     orignal_vim_dot_paste = nil,
     prev_backspace_opt = nil,
@@ -350,6 +359,7 @@ _M.open = function(open_cmd)
     if not validate_env() then return end
     ctx.env_weak_ref = rt_env
     ctx.cbs_weak_ref = rt_callbacks
+    ctx.query_hist_array_ref = query_hist_array
     set_target_winid()
 
     vim.cmd(fmt("silent keepalt %s", open_cmd or "vnew"))
@@ -374,7 +384,11 @@ _M.close = function()
     engine.close(ctx)
 
     ctx.env_weak_ref = nil
+    ctx.query_hist_array_ref = nil
+    ctx.cbs_weak_ref = nil
     ctx.target_winid = nil
+
+    action.query_hist_close(ctx)
     kit.win_delete(ctx.winid, true)
     kit.buf_delete(ctx.bufnr)
     ctx.winid = nil
@@ -383,11 +397,9 @@ _M.close = function()
     -- NOTE: Namespace does not need to be cleared
     -- All the highlights and marks are buf specific and the buf was deleted
 
+    ctx.query = nil
     ctx.lookup_table = nil
     ctx.selected_items = nil
-
-    -- TODO: query things
-    ctx.query = nil
 
     if ctx.prev_backspace_opt then
         vim.opt.backspace = ctx.prev_backspace_opt
