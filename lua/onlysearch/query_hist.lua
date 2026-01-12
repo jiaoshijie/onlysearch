@@ -41,11 +41,11 @@ local function gen_win_layout(winid)
     if max_line >= 25 and max_col >= 60 then
         main.width = round(max_col * 0.8)
         preview.width = main.width
-        main.height = round(max_line * 0.8)
+        main.height = round(max_line * 0.8) - 4
         preview.height = 4
-        preview.row = round((max_line - (main.height + 4)) / 2)
+        preview.row = round((max_line - (main.height + 4 + 4)) / 2)  -- 4 for preview height, 4 for main and preview border
         main.row = preview.row + preview.height + 2
-        preview.col = round((max_col - main.width) / 2)
+        preview.col = round((max_col - (main.width + 2)) / 2)  -- 2 for main/preview border
         main.col = preview.col
     elseif not winid then
         return nil
