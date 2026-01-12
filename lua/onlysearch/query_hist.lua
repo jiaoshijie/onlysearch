@@ -195,11 +195,11 @@ _M.open = function(rt_ctx)
     local qh_ctx = rt_ctx.query_hist_ctx
     local qh_arr = rt_ctx.query_hist_array_ref
     if qh_ctx.bufnr ~= nil then
-        kit.echo_err_msg("query history window has already opened")
+        kit.echo_err_msg("Query history window has already opened")
         return
     end
     if #qh_arr == 0 then
-        kit.echo_info_msg("No query stores in history")
+        kit.echo_info_msg("Query history is empty")
         return
     end
 
@@ -232,14 +232,14 @@ _M.add = function(rt_ctx)
 
     local qh_arr = rt_ctx.query_hist_array_ref
     if not qh_arr then
-        kit.echo_err_msg("query history context is nil, do nothing")
+        kit.echo_err_msg("Query history context is nil, do nothing")
         return
     end
 
     for i, q in ipairs(qh_arr) do
         if q.text == query.text and q.paths == query.paths
             and q.flags == query.flags and q.filters == query.filters then
-            kit.echo_info_msg(fmt("query already in the histroy array at %d, do nothing", i))
+            kit.echo_info_msg(fmt("Query `%s` already in the histroy array at %d, do nothing", q.text, i))
             return
         end
     end
@@ -249,7 +249,7 @@ _M.add = function(rt_ctx)
     end
 
     table.insert(qh_arr, 1, rt_ctx.query)
-    kit.echo_info_msg(fmt("query `%s` added to history", rt_ctx.query.text))
+    kit.echo_info_msg(fmt("Query `%s` added to history", rt_ctx.query.text))
 end
 
 --- This function can be called in any window
@@ -322,7 +322,7 @@ end
 _M.win_switch = function(rt_ctx)
     local qh_ctx = rt_ctx.query_hist_ctx
     if qh_ctx.bufnr == nil then
-        kit.echo_err_msg("query hist window not opened")
+        kit.echo_err_msg("Query history window not opened")
         return
     end
     if vim.fn.win_getid() == qh_ctx.winid then

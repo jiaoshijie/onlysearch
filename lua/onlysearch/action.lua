@@ -122,7 +122,7 @@ _M.limit.on_insert_enter = function()
     if not _M.is_editable() then
         local key = vim.api.nvim_replace_termcodes('<esc>', true, false, true)
         vim.api.nvim_feedkeys(key, 'n', false)
-        print("WARNING: You can't make changes in results.")
+        kit.echo_info_msg("Making changes in results is not allowed")
     end
 end
 
@@ -140,7 +140,7 @@ _M.limit.delete = function(key)
     if _M.is_editable() then
         vim.api.nvim_feedkeys(key, 'n', true)
     else
-        print("WARNING: You can't make changes in results.")
+        kit.echo_info_msg("Making changes in results is not allowed")
     end
 end
 
@@ -154,10 +154,10 @@ _M.limit.paste = function(key)
         if vim.fn.match(reg_content, '\r\\|\n') == -1 then
             vim.api.nvim_feedkeys(key, 'n', true)
         else
-            print("WARNING: Paste multiple lines are not allowed in onlysearch buffer")
+            kit.echo_info_msg("Paste multiple lines are not allowed in onlysearch buffer")
         end
     else
-        print("WARNING: You can't make changes in results.")
+        kit.echo_info_msg("Making changes in results is not allowed")
     end
 end
 
@@ -168,12 +168,12 @@ _M.limit.sys_clipboard_paste = function(rt_ctx)
         if rt_ctx.bufnr and rt_ctx.bufnr == vim.fn.bufnr() then
             -- 1. if not editable canceling this operation
             if not _M.is_editable() then
-                print("WARNING: You can't make changes in results.")
+                kit.echo_info_msg("Making changes in results is not allowed")
                 return false
             end
             -- 2. if the content contain multiple lines canceling this operation
             if (phase ~= -1 or #lines > 1) then
-                print("WARNING: Paste multiple lines are not allowed in onlysearch buffer")
+                kit.echo_info_msg("Paste multiple lines are not allowed in onlysearch buffer")
                 return false
             end
         end
@@ -330,7 +330,7 @@ end
 --
 --     local cursor = vim.api.nvim_win_get_cursor(0)
 --     if cursor[1] ~= cfg.ui_cfg.header.extra_flags.lnum + 1 then
---         print("WARNING: Only complete flags in line number 3")
+--         kit.echo_info_msg("Only complete flags in line number 3")
 --         return
 --     end
 --
