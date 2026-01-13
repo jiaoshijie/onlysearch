@@ -312,7 +312,7 @@ _M.apply = function(rt_ctx)
 
     _M.close(rt_ctx)
     rt_ctx.query = query
-    ui.resume_query(rt_ctx, query)
+    ui.render_query(rt_ctx, query)
     rt_ctx.engine_search_fn(rt_ctx)
 end
 

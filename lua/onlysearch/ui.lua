@@ -186,7 +186,7 @@ end
 --- redraw the ui for last query
 --- @param rt_ctx table  runtime_ctx
 --- @param query Query
-function _M.resume_query(rt_ctx, query)
+function _M.render_query(rt_ctx, query)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return
     end
@@ -197,10 +197,10 @@ function _M.resume_query(rt_ctx, query)
 
     -- set query lines
     vim.api.nvim_buf_set_lines(rt_ctx.bufnr, 0, -1, false, {
-        query.text,
-        query.paths,
-        query.flags,
-        query.filters,
+        query.text or "",
+        query.paths or "",
+        query.flags or "",
+        query.filters or "",
     })
 
     _M.render_header(rt_ctx)

@@ -352,7 +352,7 @@ _M.is_opend = function()
     return ctx.bufnr ~= nil
 end
 
-_M.open = function(open_cmd)
+_M.open = function(open_cmd, query)
     if not validate_env() then return end
     ctx.env_weak_ref = rt_env
     ctx.cbs_weak_ref = rt_callbacks
@@ -371,8 +371,15 @@ _M.open = function(open_cmd)
     set_keymaps()
 
     ctx.engine_search_fn = engine.search
-
-    ui.render_header(ctx)
+    if not query then
+        ui.render_header(ctx)
+    else
+        ctx.query = query
+        ui.render_query(ctx, query)
+        if query.text and #query.text >= 3 then
+            engine.search(ctx)
+        end
+    end
 end
 
 _M.close = function()
