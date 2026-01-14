@@ -183,7 +183,7 @@ function _M.clear_result(rt_ctx)
     vim.api.nvim_buf_set_lines(rt_ctx.bufnr, cfg.ui_cfg.header_lines, -1, false, {})
 end
 
---- redraw the ui for last query
+--- redraw the ui for given query
 --- @param rt_ctx table  runtime_ctx
 --- @param query Query
 function _M.render_query(rt_ctx, query)
