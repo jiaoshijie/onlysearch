@@ -141,6 +141,7 @@ end
 
 --- @param rt_ctx table runtime_ctx
 _M.search = function(rt_ctx)
+    assert(rt_ctx.query ~= nil)
     local rt_cb = rt_ctx.cbs_weak_ref
     local e_ctx = rt_ctx.engine_ctx
     local uv_ctx = e_ctx.uv_ctx

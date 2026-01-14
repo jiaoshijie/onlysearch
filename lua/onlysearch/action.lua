@@ -316,6 +316,21 @@ _M.send2qf = function(rt_ctx)
     end
 end
 
+--- @param rt_ctx table runtime_ctx
+_M.recover_os_view = function(rt_ctx)
+    assert(rt_ctx ~= nil)
+    if rt_ctx.bufnr == nil then
+        return
+    end
+
+    ui.render_query(rt_ctx, rt_ctx.query or {})
+
+    if rt_ctx.query then
+        -- NOTE: does not need to check the query.text, becasue the runtime only save valid search qeury
+        rt_ctx.engine_search_fn(rt_ctx)
+    end
+end
+
 -- NOTE: using omnifunc(C-x C-o) instead
 -- --- @param rt_ctx table runtime_ctx
 -- _M.omnifunc = function(rt_ctx)
