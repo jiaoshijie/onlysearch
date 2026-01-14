@@ -89,18 +89,26 @@ _M.is_editable = function(lnum)
 end
 
 --- @param rt_ctx table runtime_ctx
-_M.search = function(rt_ctx)
+_M.search = function(rt_ctx, lazy)
     local lines = vim.api.nvim_buf_get_lines(rt_ctx.bufnr, 0, cfg.ui_cfg.header_lines, false)
     if #lines[1] < 3 then return end
 
-    -- Assign an new table object to rt_ctx.query
-    rt_ctx.query = {
+    local query = {
         text = lines[1],
         paths = vim.fn.trim(lines[2]),
         flags = vim.fn.trim(lines[3]),
         filters = vim.fn.trim(lines[4]),
     }
 
+    if lazy and rt_ctx.query and query.text == rt_ctx.query.text
+        and query.paths == rt_ctx.query.paths
+        and query.flags == rt_ctx.query.flags
+        and query.filters == rt_ctx.query.filters then
+        return
+    end
+
+    -- Assign an new table object to rt_ctx.query
+    rt_ctx.query = query
     rt_ctx.engine_search_fn(rt_ctx)
 end
 
@@ -130,11 +138,12 @@ end
 --- @param rt_ctx table runtime_ctx
 _M.on_insert_leave = function(rt_ctx)
     if _M.is_editable() then
-        _M.search(rt_ctx)
+        _M.search(rt_ctx, true)
     end
 end
 
---- prevent user do deletion operation. e.g. d D x X in result area
+--- prevent user do change text operation in result area or change the window layout.
+--- e.g. d D x X r R
 --- @param key string
 _M.limit.modify_text = function(key)
     if _M.is_editable() then

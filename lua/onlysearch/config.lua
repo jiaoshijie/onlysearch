@@ -47,7 +47,7 @@ _M.keymaps_cfg = {
         ['<leader>='] = 'clear_all_selected_items',
         ['Q'] = 'send2qf',
         ['S'] = 'search',
-        ['<C-R>'] = 'recover_os_view',
+        ['<C-M-r>'] = 'recover_os_view',
         ['<leader>qo'] = 'query_hist_open',
         ['<leader>qa'] = 'query_hist_add',
         ['<leader>qc'] = 'query_hist_close',
