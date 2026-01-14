@@ -267,10 +267,15 @@ local set_option = function()
 end
 
 local set_events = function(ev_group)
-    vim.api.nvim_create_autocmd({ "WinClosed" }, {
+    vim.api.nvim_create_autocmd("WinClosed", {
         buffer = ctx.bufnr,
         group = ev_group,
-        callback = function() _M.close() end,
+        callback = function(ev)
+            -- Both <amatch> and <afile> are set to the |window-ID|
+            if tonumber(ev.match) == ctx.winid then
+                _M.close()
+            end
+        end,
     })
     if cfg.common.search_leave_insert then
         vim.api.nvim_create_autocmd("InsertLeave", {
