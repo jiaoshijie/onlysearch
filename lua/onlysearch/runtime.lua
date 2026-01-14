@@ -374,9 +374,9 @@ _M.open = function(open_cmd, query)
     if not query then
         ui.render_header(ctx)
     else
-        ctx.query = query
         ui.render_query(ctx, query)
         if query.text and #query.text >= 3 then
+            ctx.query = query
             engine.search(ctx)
         end
     end
