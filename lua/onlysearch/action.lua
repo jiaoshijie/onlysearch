@@ -136,7 +136,7 @@ end
 
 --- prevent user do deletion operation. e.g. d D x X in result area
 --- @param key string
-_M.limit.delete = function(key)
+_M.limit.modify_text = function(key)
     if _M.is_editable() then
         vim.api.nvim_feedkeys(key, 'n', true)
     else
