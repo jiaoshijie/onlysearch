@@ -181,9 +181,12 @@ _M.search = function(rt_ctx)
             if code ~= 0 or signal ~= 0 then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",
                         e_ctx.cmd, code, signal))
-            elseif work_id == e_ctx.id then
+            end
+
+            if work_id == e_ctx.id then
                 rt_cb.on_finish()
             end
+
             uv_gracefully_shutdown(rt_ctx)
         end)
     )
