@@ -264,6 +264,7 @@ local set_option = function()
     vim.api.nvim_set_option_value('filetype', 'onlysearch', buf_opt)
     vim.api.nvim_set_option_value('iskeyword', cfg.common.keyword, buf_opt)
     vim.api.nvim_set_option_value('omnifunc', [[v:lua.onlysearch_custom_omnifunc]], buf_opt)
+    vim.api.nvim_set_option_value("undolevels", -1, buf_opt)  -- disable undo/redo
 end
 
 local set_events = function(ev_group)
@@ -338,8 +339,9 @@ local set_limitation = function(ev_group)
     vim.keymap.set('v', 'r', '<nop>', map_opts)
     vim.keymap.set('n', 'R', function() action.limit.modify_text('R') end, map_opts)
     vim.keymap.set('v', 'R', '<nop>', map_opts)
-    vim.keymap.set('n', 'u', '<nop>', map_opts)
-    vim.keymap.set('n', '<C-r>', '<nop>', map_opts)
+    -- using buf option to disable undo/redo
+    -- vim.keymap.set('n', 'u', '<nop>', map_opts)
+    -- vim.keymap.set('n', '<C-r>', '<nop>', map_opts)
     vim.keymap.set('n', 'o', 'ji', map_opts)
     vim.keymap.set('n', 'O', 'ki', map_opts)
     vim.keymap.set({'n', 'v'}, 'C', '<nop>', map_opts)
