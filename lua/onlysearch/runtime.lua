@@ -187,7 +187,7 @@ end
 --- @return boolean
 local validate_env = function()
     -- 1. check whether it is already opened
-    if _M.is_opend() then
+    if _M.is_opened() then
         kit.echo_err_msg("Onlysearch has already opened")
         return false
     end
@@ -360,7 +360,7 @@ local set_limitation = function(ev_group)
 end
 
 --- @return boolean
-_M.is_opend = function()
+_M.is_opened = function()
     return ctx.bufnr ~= nil
 end
 
@@ -395,7 +395,7 @@ _M.open = function(open_cmd, query)
 end
 
 _M.close = function()
-    if not _M.is_opend() then return end
+    if not _M.is_opened() then return end
 
     engine.close(ctx)
 
@@ -428,7 +428,7 @@ end
 
 --- @return boolean
 _M.is_visible_on_cur_tab = function()
-    if not _M.is_opend() then return false end
+    if not _M.is_opened() then return false end
     return kit.winid_in_tab(ctx.winid)
 end
 

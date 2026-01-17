@@ -17,7 +17,7 @@ _M.toggle = function(open_cmd, query)
     if rt.is_visible_on_cur_tab() then
         rt.close()
     else
-        if rt.is_opend() then rt.close() end
+        if rt.is_opened() then rt.close() end
         rt.open(open_cmd, query)
     end
 end
