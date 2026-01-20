@@ -5,7 +5,7 @@ local query_hist = require("onlysearch.query_hist")
 
 local _M = { limit = {} }
 
---- @param winid number
+--- @param winid integer
 --- @return boolean
 local is_valid_target_winid = function(winid)
     if winid ~= 0 and vim.api.nvim_win_is_valid(winid) and kit.winid_in_tab(winid)
@@ -15,8 +15,8 @@ local is_valid_target_winid = function(winid)
     return false
 end
 
---- @param winid number the window id that the user is in when open the onlysearch window
---- @return number the window id that the bufnr will be placed at
+--- @param winid integer the window id that the user is in when open the onlysearch window
+--- @return integer the window id that the bufnr will be placed at
 local chose_window = function(winid)
     -- 1. first try to use the last window to open the file
     local target_winid = vim.fn.win_getid(vim.fn.winnr('#'))
@@ -49,9 +49,9 @@ local chose_window = function(winid)
     return vim.fn.win_getid()
 end
 
---- @param winid number
+--- @param winid integer
 --- @param abs_path string
---- @param lnum number
+--- @param lnum integer
 local open_file = function(winid, abs_path, lnum)
     vim.fn.win_gotoid(chose_window(winid))
     vim.cmd('edit ' .. vim.fn.fnameescape(abs_path))
@@ -79,7 +79,7 @@ local gen_abs_path = function(cwd, filename)
     return abs_path
 end
 
---- @param lnum ?number
+--- @param lnum integer?
 --- @return boolean
 _M.is_editable = function(lnum)
     if lnum then
@@ -191,7 +191,7 @@ _M.limit.sys_clipboard_paste = function(rt_ctx)
 end
 
 --- @param rt_ctx table runtime_ctx
---- @param lnum number
+--- @param lnum integer
 --- @return string
 _M.foldexpr = function(rt_ctx, lnum)
     assert(rt_ctx ~= nil)
@@ -220,7 +220,7 @@ _M.foldexpr = function(rt_ctx, lnum)
 end
 
 --- @param rt_ctx table runtime_ctx
---- @param lnum number
+--- @param lnum integer
 local toggle_single_line = function(rt_ctx, lnum)
     assert(rt_ctx ~= nil)
 

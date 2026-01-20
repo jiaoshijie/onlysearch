@@ -14,13 +14,13 @@ local _M = {}
 --- @field filters string filters separated by space(' '), e.g. *.lua, !*.c, !target/, etc.
 
 --- @class MatchRange
---- @field s number the start position of matched item(zero-based)
---- @field e number the end postion of matched item(excluded)
+--- @field s integer the start position of matched item(zero-based)
+--- @field e integer the end postion of matched item(excluded)
 
 --- @class MatchedItem
 --- @field p string the file path of matched item
 --- @field c string the line content of matched item
---- @field l number the line number of matched item in the file
+--- @field l integer the line number of matched item in the file
 --- @field subm ?MatchRange[]
 
 -- { engine_checked }
@@ -75,7 +75,7 @@ local ctx = {
 
         -- uv
         uv_ctx = {
-            pid = nil, -- number
+            pid = nil, -- integer
             handle = nil, -- uv_process_t
             stdout = nil, -- uv_pipe_t
             stderr = nil, -- uv_pipe_t

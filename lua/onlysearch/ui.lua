@@ -35,9 +35,9 @@ end
 
 --- render the file name of the result
 --- @param rt_ctx table  runtime_ctx
---- @param lnum number the line number which the filename should be place at
+--- @param lnum integer the line number which the filename should be place at
 --- @param line string the filename string
---- @return number the line number next content should be place at
+--- @return integer the line number next content should be place at
 function _M.render_filename(rt_ctx, lnum, line)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum
@@ -54,11 +54,11 @@ end
 
 --- render matched line of the result
 --- @param rt_ctx table  runtime_ctx
---- @param lnum number the line number which the filename should be place at
---- @param mlnum number the line number of the match item in the file
+--- @param lnum integer the line number which the filename should be place at
+--- @param mlnum integer the line number of the match item in the file
 --- @param line string
 --- @param subms ?MatchRange[]
---- @return number the line number next content should be place at
+--- @return integer the line number next content should be place at
 function _M.render_match_line(rt_ctx, lnum, mlnum, line, subms)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum
@@ -87,7 +87,7 @@ end
 
 --- draw the selected highlight or clear the selected highlight
 --- @param rt_ctx table  runtime_ctx
---- @param lnum number the line number that selected or unseleted
+--- @param lnum integer the line number that selected or unseleted
 --- @param is_sel boolean is select or not
 function _M.toggle_sel_line(rt_ctx, lnum, is_sel)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
@@ -108,9 +108,9 @@ end
 
 --- draw the raw text(e.g. rg --help)
 --- @param rt_ctx table  runtime_ctx
---- @param lnum number
+--- @param lnum integer
 --- @param line string
---- @return number the line number next content should be place at
+--- @return integer the line number next content should be place at
 function _M.render_message(rt_ctx, lnum, line)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum
@@ -122,9 +122,9 @@ end
 
 --- draw the error message
 --- @param rt_ctx table  runtime_ctx
---- @param lnum number
+--- @param lnum integer
 --- @param line string
---- @return number the line number next content should be place at
+--- @return integer the line number next content should be place at
 function _M.render_error(rt_ctx, lnum, line)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum

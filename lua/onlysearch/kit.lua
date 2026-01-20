@@ -11,8 +11,8 @@ _M.echo_info_msg = function(msg)
 end
 
 
---- @return number? major
---- @return number? minor
+--- @return integer? major
+--- @return integer? minor
 _M.get_cmd_version = function(cmd, ver_flag, ver_fmt)
     if vim.fn.executable(cmd) ~= 1 then
         return nil, nil
@@ -34,14 +34,14 @@ _M.get_cmd_version = function(cmd, ver_flag, ver_fmt)
     return tonumber(major), tonumber(minor)
 end
 
---- @param winid ?number
+--- @param winid integer?
 --- @return boolean
 _M.winid_in_tab = function(winid)
     if winid == nil then return false end
     return vim.fn.tabpagenr() == vim.fn.win_id2tabwin(winid)[1]
 end
 
---- @param bufnr number
+--- @param bufnr integer
 _M.buf_delete = function(bufnr)
     if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
         return
@@ -56,7 +56,7 @@ _M.buf_delete = function(bufnr)
     vim.o.report = start_report
 end
 
---- @param win_id number
+--- @param win_id integer
 --- @param force boolean see :h nvim_win_close
 _M.win_delete = function(win_id, force)
     if not win_id or not vim.api.nvim_win_is_valid(win_id) then
