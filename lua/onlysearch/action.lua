@@ -54,7 +54,14 @@ end
 --- @param lnum integer
 local open_file = function(winid, abs_path, lnum)
     vim.fn.win_gotoid(chose_window(winid))
-    vim.cmd('edit ' .. vim.fn.fnameescape(abs_path))
+
+    local bufnr = vim.fn.bufnr(abs_path)
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+        vim.cmd('buffer ' .. bufnr)
+    else
+        vim.cmd('edit ' .. vim.fn.fnameescape(abs_path))
+    end
+
     if lnum then
         pcall(vim.api.nvim_win_set_cursor, 0, { lnum, 0 })
     else
