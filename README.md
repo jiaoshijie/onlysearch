@@ -2,6 +2,8 @@
 
 > [!CAUTION]
 > This plugin does **NOT** provide replace functionality by itself.
+>
+> Only works on UNIX-like systems.
 
 A simple Neovim plugin for searching across projects or files—search only, nothing more.
 
