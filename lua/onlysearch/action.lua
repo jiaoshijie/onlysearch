@@ -57,7 +57,11 @@ local open_file = function(winid, abs_path, lnum)
 
     local bufnr = vim.fn.bufnr(abs_path)
     if vim.api.nvim_buf_is_loaded(bufnr) then
-        vim.cmd('buffer ' .. bufnr)
+        if bufnr == vim.api.nvim_get_current_buf() then
+            vim.cmd([[normal! m']])  -- set jumplist
+        else
+            vim.cmd('buffer ' .. bufnr)
+        end
     else
         vim.cmd('edit ' .. vim.fn.fnameescape(abs_path))
     end
