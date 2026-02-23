@@ -86,9 +86,12 @@ _M.engines_cfg = {
 
 --- @param cfg table { common = {}, engine = {}, keymaps = {} }
 _M.setup = function(cfg)
+    if type(cfg) ~= "table" then return end
+
     _M.common = vim.tbl_extend('force', _M.common, cfg.common or {})
     _M.keymaps_cfg = vim.tbl_deep_extend('force', _M.keymaps_cfg, cfg.keymaps or {})
-    _M.engines_cfg[_M.common.engine] = cfg.engine or {}
+    _M.engines_cfg[_M.common.engine] = vim.tbl_deep_extend('force',
+        _M.engines_cfg[_M.common.engine], cfg.engine or {})
 end
 
 --- @return string?
