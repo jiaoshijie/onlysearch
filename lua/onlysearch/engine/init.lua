@@ -229,7 +229,7 @@ _M.search = function(rt_ctx)
             end)
         else
             if e_ctx.stderr_last_chunk then
-                rt_cb.on_error({ e_ctx.stderr_last_chunk })
+                rt_cb.on_error(e_ctx.stderr_last_chunk)
                 e_ctx.stderr_last_chunk = nil
             end
             uv_close_handle(uv_ctx.stderr)

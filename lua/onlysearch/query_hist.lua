@@ -121,7 +121,7 @@ local set_event = function(rt_ctx)
     })
     vim.api.nvim_create_autocmd("WinClosed", {
         group = ev_group,
-        buffer = qh_ctx.q_bufnr,
+        buffer = qh_ctx.p_bufnr,
         callback = function()
             _M.close(rt_ctx)
         end
