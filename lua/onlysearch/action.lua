@@ -44,9 +44,11 @@ local chose_window = function(winid)
 
     -- 5. finally, creating a new window open the file
     --    the onlysearch window is the only window in this tabpage
-    vim.cmd("silent keepalt vertical split")
+    vim.cmd("silent keepalt vertical new")
+    winid = vim.fn.win_getid()
+    kit.restore_local_win_options(winid)
 
-    return vim.fn.win_getid()
+    return winid
 end
 
 --- @param winid integer

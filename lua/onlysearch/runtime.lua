@@ -241,6 +241,9 @@ end
 local set_option = function()
     local win_opt = { win = ctx.winid }
     local buf_opt = { buf = ctx.bufnr }
+
+    kit.backup_local_win_options(ctx.winid)
+
     -- set buffer name --
     vim.api.nvim_buf_set_name(ctx.bufnr, cfg.buf_name)
     -- window options --
@@ -255,6 +258,7 @@ local set_option = function()
     vim.api.nvim_set_option_value('foldenable', false, win_opt)
     vim.api.nvim_set_option_value('foldexpr', [[v:lua.require('onlysearch.runtime').foldexpr(v:lnum)]], win_opt)
     vim.api.nvim_set_option_value('foldmethod', 'expr', win_opt)
+    vim.api.nvim_set_option_value('foldlevel', 1, win_opt)
     vim.api.nvim_set_option_value('winfixbuf', true, win_opt)
     -- buf options --
     vim.api.nvim_set_option_value('bufhidden', 'wipe', buf_opt) -- NOTE: or 'delete'

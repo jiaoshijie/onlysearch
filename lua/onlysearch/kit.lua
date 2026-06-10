@@ -1,6 +1,14 @@
 local _M = {}
 local fmt = string.format
 
+local lwin_options = {
+    colorcolumn = "",
+    foldmethod = "manual",
+    foldexpr = "0",
+    foldenable = true,
+    foldlevel = 0,
+}
+
 --- @param msg string
 _M.echo_err_msg = function(msg)
     vim.api.nvim_echo({ { fmt("OnlySearch: %s", msg) } }, true, { err = true })
@@ -117,6 +125,27 @@ _M.split_last_chunk = function(str)
     end
 
     return nil, str
+end
+
+--- @param winid integer
+_M.backup_local_win_options = function(winid)
+    local get = vim.api.nvim_get_option_value
+    lwin_options.colorcolumn = get("colorcolumn", { win = winid })
+    lwin_options.foldmethod = get("foldmethod", { win = winid })
+    lwin_options.foldexpr = get("foldexpr", { win = winid })
+    lwin_options.foldenable = get("foldenable", { win = winid })
+    lwin_options.foldlevel = get("foldlevel", { win = winid })
+end
+
+
+--- @param winid integer
+_M.restore_local_win_options = function(winid)
+    local set = vim.api.nvim_set_option_value
+    set('colorcolumn', lwin_options.colorcolumn, { win = winid })
+    set('foldmethod', lwin_options.foldmethod, { win = winid })
+    set('foldexpr', lwin_options.foldexpr, { win = winid })
+    set('foldenable', lwin_options.foldenable, { win = winid })
+    set('foldlevel', lwin_options.foldlevel, { win = winid })
 end
 
 return _M
