@@ -79,7 +79,10 @@ local qh_refresh = function(rt_ctx, only_preview)
 
     qh_ctx.last_cur_lnum = pos[1]
     local query = qh_arr[pos[1]]
-    local lines = query and { query.text, query.paths, query.flags, query.filters } or {}
+    local lines = query and {
+        query.text, query.paths or "",
+        query.flags or "", query.filters or "",
+    } or {}
     vim.api.nvim_set_option_value("modifiable", true, { buf = qh_ctx.p_bufnr })
     vim.api.nvim_buf_set_lines(qh_ctx.p_bufnr, 0, 4, false, lines)
     vim.api.nvim_set_option_value("modifiable", false, { buf = qh_ctx.p_bufnr })
