@@ -177,6 +177,7 @@ _M.search = function(rt_ctx)
             stdio = { nil, uv_ctx.stdout, uv_ctx.stderr },
             args = e_ctx.args,
             cwd = e_ctx.cwd,
+            env = { "GREP_COLORS=ms=0:mc=:sl=:cx=:fn=:ln=:bn=:se=:ne" },
         }, vim.schedule_wrap(function(code, signal)
             if code ~= 0 or signal ~= 0 then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",

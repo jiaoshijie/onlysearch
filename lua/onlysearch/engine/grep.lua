@@ -10,6 +10,26 @@ local parse_grep_output = function(data)
     return p, l, c
 end
 
+local parse_subm = function(data)
+    local subm = {}
+    local p, c = 0, 1
+
+    while true do
+        local b1, e1 = string.find(data, '\27[0m', p + 1, true)
+        if b1 == nil then break end
+        local b2, e2 = string.find(data, '\27[m', e1 + 1, true)
+        if b2 == nil then break end  -- Must be impossible
+
+        table.insert(subm, { s = b1 - c, e = b2 - c - 4 })
+
+        --- @diagnostic disable-next-line: cast-local-type
+        p = e2
+        c = c + 7
+    end
+
+    return #subm == 0 and nil or subm
+end
+
 -- NOTE: GNU grep --help/--version will never output a ASCII NUL char
 -- 'main.c\012:abcdhjkl'
 _M.parse_output = function(data)
@@ -19,7 +39,13 @@ _M.parse_output = function(data)
         -- `-C number` option, just return nil
         -- 'main.c\012-abcdhjkl'
         if l == nil then return nil end
-        return { p = p, c = c, l = tonumber(l) }
+        return {
+            p = p,
+            l = tonumber(l),
+            --- @diagnostic disable-next-line: param-type-mismatch
+            c = string.gsub(c, "\27%[0-m", ""),
+            subm = parse_subm(c),
+        }
     end
 
     -- p == nil

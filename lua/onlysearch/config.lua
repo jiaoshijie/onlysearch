@@ -64,7 +64,7 @@ _M.engines_cfg = {
             '--json',
         },
         grep = {
-            '--color=never',
+            '--color=always',
             '-r', -- recursive
             '-I',  -- don't search binary file
             '-n', -- show line number
