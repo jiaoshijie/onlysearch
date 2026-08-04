@@ -26,6 +26,3 @@
      }
    }
    ```
-
-2. Need to listen one of nvim quit events for clearing the search process to prevent freezing nvim sometimes
-  - QuitPre, ExitPre, VimLeavePre

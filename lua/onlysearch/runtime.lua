@@ -282,6 +282,11 @@ local set_events = function(ev_group)
             end
         end,
     })
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+        pattern = "*",
+        group = ev_group,
+        callback = _M.close,
+    })
     if cfg.common.search_leave_insert then
         vim.api.nvim_create_autocmd("InsertLeave", {
             buffer = ctx.bufnr,
@@ -403,6 +408,7 @@ end
 _M.close = function()
     if not _M.is_opened() then return end
 
+    vim.api.nvim_del_augroup_by_name("onlysearch_rt_event")
     engine.close(ctx)
 
     ctx.env_weak_ref = nil
