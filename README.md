@@ -13,7 +13,7 @@ A simple Neovim plugin for searching across projects or files—search only, not
 
 ## Requirements
 
-- nvim 0.11.0 or above
+- nvim lately
 - [ripgrep](https://github.com/BurntSushi/ripgrep) or [gnu-grep](https://www.gnu.org/software/grep/)
 
 ## Features
@@ -23,7 +23,7 @@ A simple Neovim plugin for searching across projects or files—search only, not
 3. Sends all or selected search results to the quickfix list
 4. Automatically searches when leaving insert mode
 5. Maintains search history (manual, not automatic)
-6. Minimal and lightweight (~1,500 LOC)
+6. Minimal and lightweight (~1,700 LOC)
 7. Supports completion for user-defined flags
 
 ## Non-Features
