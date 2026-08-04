@@ -77,6 +77,8 @@ local uv_close_handle = function(handle)
 end
 
 local uv_close_handles = function(uv_ctx)
+    uv_close_handle(uv_ctx.shutdown_check)
+    uv_ctx.shutdown_check = nil
     uv_close_handle(uv_ctx.stdout)
     uv_ctx.stdout = nil
     uv_close_handle(uv_ctx.stderr)
@@ -105,19 +107,16 @@ local uv_shutdown = function(rt_ctx, abort)
     if not uv_ctx.pid then return end
     uv_ctx.pid = nil
 
-    if abort and uv_ctx.handle then
-        -- uv.kill needs pid
-        uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGTERM)
+    if abort then
+        -- NOTE: since the handle will be closed upon this operation,
+        -- the callback registered in uv.spawn will never be called.
+        -- then I think using SIGKILL is more suitable.
+        uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGKILL)
     end
 
+    uv.check_stop(uv_ctx.shutdown_check)
     uv.read_stop(uv_ctx.stdout)
     uv.read_stop(uv_ctx.stderr)
-
-    if abort then
-        uv.check_stop(uv_ctx.shutdown_check)
-        uv_close_handle(uv_ctx.shutdown_check)
-        uv_ctx.shutdown_check = nil
-    end
 
     uv_close_handles(uv_ctx)
 end
@@ -129,11 +128,9 @@ local uv_gracefully_shutdown = function(rt_ctx)
     if not uv_ctx.pid then return end
 
     uv.check_start(uv_ctx.shutdown_check, function()
+        -- NOTE: Wait the spawned process closes the stdout and stderr.
+        -- Ensure all data has been processed successfully.
         if not uv_is_stdout_stderr_closed(uv_ctx) then return end
-
-        uv.check_stop(uv_ctx.shutdown_check)
-        uv_close_handle(uv_ctx.shutdown_check)
-        uv_ctx.shutdown_check = nil
 
         uv_shutdown(rt_ctx, false)
     end)
@@ -155,16 +152,16 @@ _M.search = function(rt_ctx)
     local work_id = unique_id
     unique_id = unique_id + 1
 
+    if uv_ctx.pid then
+        uv_shutdown(rt_ctx, true)
+    end
+
     e_ctx.id = work_id
     e_ctx.cmd, e_ctx.args = gen_cmd(backend, rt_ctx.query)
     e_ctx.cwd = vim.fn.getcwd()
     e_ctx.is_raw_data = nil
     e_ctx.stdout_last_chunk = nil
     e_ctx.stderr_last_chunk = nil
-
-    if uv_ctx.pid then
-        uv_shutdown(rt_ctx, true)
-    end
 
     rt_cb.on_start()
 
