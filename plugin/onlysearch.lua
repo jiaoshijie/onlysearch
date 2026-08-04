@@ -9,6 +9,7 @@ local highlights = {
     OnlysearchError         = { default = true, link = "Error" },
     OnlysearchSep           = { default = true, link = "Ignore" },
     OnlysearchSepErr        = { default = true, link = "ErrorMsg" },
+    OnlysearchSepSigint     = { default = true, link = "WarningMsg" },
     OnlysearchSelectedLine  = { default = true, link = "Visual" },
 }
 

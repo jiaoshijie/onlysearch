@@ -125,6 +125,12 @@ _M.search = function(rt_ctx, lazy)
     rt_ctx.engine_search_fn(rt_ctx)
 end
 
+--- @param rt_ctx table runtime_ctx
+_M.stop_search = function(rt_ctx)
+    assert(rt_ctx ~= nil)
+    rt_ctx.engine_interrupt_fn(rt_ctx)
+end
+
 --- open a result item and put cursor on the matched line
 --- @param rt_ctx table runtime_ctx
 _M.select_entry = function(rt_ctx)

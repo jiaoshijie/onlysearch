@@ -44,6 +44,7 @@ local ctx = {
     cbs_weak_ref = nil,
     query_hist_array_ref = nil,
     engine_search_fn = nil,  -- fn(rt_ctx)
+    engine_interrupt_fn = nil, -- fn(rt_ctx)
 
     bufnr = nil,
     winid = nil,
@@ -60,6 +61,7 @@ local ctx = {
         cur_file_path = nil,
         match_info = {
             files = nil,
+            lines = nil,
             matches = nil,
             time = nil,
         },
@@ -70,6 +72,7 @@ local ctx = {
         args = nil,
         cwd = nil,
         is_raw_data = nil,        -- boolean
+        is_interrupted = nil,     -- boolean
         stdout_last_chunk = nil,  -- string?
         stderr_last_chunk = nil,  -- string?
 
@@ -105,6 +108,7 @@ rt_callbacks.on_start = function()
         cur_file_path = nil,
         match_info = {
             files = 0,
+            lines = 0,
             matches = 0,
             time = vim.uv.hrtime(),
         },
@@ -132,6 +136,7 @@ rt_callbacks.on_result = function(item)
         else
             pctx.match_info.matches = pctx.match_info.matches + 1
         end
+        pctx.match_info.lines = pctx.match_info.lines + 1
         pctx.cur_lnum = ui.render_match_line(ctx, pctx.cur_lnum, item.l, item.c, item.subm)
 
         -- NOTE: compatible with vim quickfix, but not showing any text.
@@ -166,19 +171,19 @@ rt_callbacks.on_error = function(item)
     pctx.cur_lnum = ui.render_error(ctx, pctx.cur_lnum, item)
 end
 
-rt_callbacks.on_finish = function()
+rt_callbacks.on_finish = function(int)
     local pctx = ctx.progress_ctx
     if not pctx or pctx.has_error then return end
 
     local stats = nil
     if pctx.match_info.matches > 0 then
-        stats = string.format("(%d matches in %d files):(time: %.03fs)",
-                pctx.match_info.matches, pctx.match_info.files,
+        stats = string.format("(%d matches in %d lines in %d files):(time: %.03fs)",
+                pctx.match_info.matches, pctx.match_info.lines, pctx.match_info.files,
                 (vim.uv.hrtime() - pctx.match_info.time) / 1E9)
     else
         stats = string.format("(no matches)")
     end
-    ui.render_sep(ctx, false, stats)
+    ui.render_sep(ctx, false, int, stats)
     -- append an empty line at the end of result
     -- for making fold correct at the last match line
     pctx.cur_lnum = ui.render_message(ctx, pctx.cur_lnum, "")
@@ -394,6 +399,7 @@ _M.open = function(open_cmd, query)
     set_keymaps()
 
     ctx.engine_search_fn = engine.search
+    ctx.engine_interrupt_fn = engine.interrupt
     if not query then
         ui.render_header(ctx)
     else

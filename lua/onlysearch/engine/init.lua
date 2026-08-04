@@ -160,6 +160,7 @@ _M.search = function(rt_ctx)
     e_ctx.cmd, e_ctx.args = gen_cmd(backend, rt_ctx.query)
     e_ctx.cwd = vim.fn.getcwd()
     e_ctx.is_raw_data = nil
+    e_ctx.is_interrupted = nil
     e_ctx.stdout_last_chunk = nil
     e_ctx.stderr_last_chunk = nil
 
@@ -176,13 +177,14 @@ _M.search = function(rt_ctx)
             cwd = e_ctx.cwd,
             env = { "GREP_COLORS=ms=0:mc=:sl=:cx=:fn=:ln=:bn=:se=:ne" },
         }, vim.schedule_wrap(function(code, signal)
-            if code ~= 0 or signal ~= 0 then
+            local interrupted = signal == vim.uv.constants.SIGINT and e_ctx.is_interrupted
+            if code ~= 0 or (signal ~= 0 and not interrupted) then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",
                         e_ctx.cmd, code, signal))
             end
 
             if work_id == e_ctx.id then
-                rt_cb.on_finish()
+                rt_cb.on_finish(interrupted)
             end
 
             uv_gracefully_shutdown(rt_ctx)
@@ -202,7 +204,10 @@ _M.search = function(rt_ctx)
     end
 
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid or work_id ~= e_ctx.id then return end
+        if not uv_ctx.pid or work_id ~= e_ctx.id
+            or e_ctx.is_interrupted then
+            return
+        end
 
         if err then
             kit.echo_err_msg("libuv reading from stdout failed")
@@ -217,7 +222,10 @@ _M.search = function(rt_ctx)
         end
     end))
     uv.read_start(uv_ctx.stderr, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid or work_id ~= e_ctx.id then return end
+        if not uv_ctx.pid or work_id ~= e_ctx.id
+            or e_ctx.is_interrupted then
+            return
+        end
 
         if err then
             kit.echo_err_msg("libuv reading from stderr failed")
@@ -246,6 +254,18 @@ _M.close = function(rt_ctx)
     e_ctx.is_raw_data = nil
     e_ctx.stdout_last_chunk = nil
     e_ctx.stderr_last_chunk = nil
+end
+
+_M.interrupt = function(rt_ctx)
+    local e_ctx = rt_ctx.engine_ctx
+    local uv_ctx = e_ctx.uv_ctx
+    local query = rt_ctx.query.text
+
+    if uv_ctx.shutdown_check and not uv.is_active(uv_ctx.shutdown_check)
+        and not e_ctx.is_interrupted then
+        e_ctx.is_interrupted = uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGINT) == 0
+        kit.echo_info_msg(fmt("Search for `%s` has been interrupted(%s)", query, e_ctx.is_interrupted))
+    end
 end
 
 return _M

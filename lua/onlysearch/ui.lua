@@ -141,8 +141,9 @@ end
 --- draw the separating mark
 --- @param rt_ctx table  runtime_ctx
 --- @param is_error boolean
+--- @param is_interrupted ?boolean
 --- @param msg ?string
-function _M.render_sep(rt_ctx, is_error, msg)
+function _M.render_sep(rt_ctx, is_error, is_interrupted, msg)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return
     end
@@ -152,7 +153,7 @@ function _M.render_sep(rt_ctx, is_error, msg)
     if is_error then
         sep_str = '--(ERROR)' .. sep_str
     elseif msg then
-        sep_str = '--' .. msg .. sep_str
+        sep_str = '--' .. (is_interrupted and "(SIGINT):" or "") .. msg .. sep_str
     end
 
     if rt_ctx.sep_extmark_id then
@@ -160,9 +161,11 @@ function _M.render_sep(rt_ctx, is_error, msg)
             rt_ctx.sep_extmark_id)
     end
 
+    local hg = is_interrupted and "OnlysearchSepSigint" or "OnlysearchSep"
+
     rt_ctx.sep_extmark_id = vim.api.nvim_buf_set_extmark(
         rt_ctx.bufnr, ns.result_id, cfg.ui_cfg.header_lines - 1, 0, {
-            virt_lines = { { { sep_str, is_error and "OnlysearchSepErr" or "OnlysearchSep" } } },
+            virt_lines = { { { sep_str, is_error and "OnlysearchSepErr" or hg } } },
             virt_lines_leftcol = true,
             virt_lines_above = false,
             right_gravity = false,
