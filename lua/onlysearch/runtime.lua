@@ -290,7 +290,10 @@ local set_events = function(ev_group)
     vim.api.nvim_create_autocmd("VimLeavePre", {
         pattern = "*",
         group = ev_group,
-        callback = _M.close,
+        callback = function()
+            -- try to close the search process
+            engine.close(ctx)
+        end,
     })
     if cfg.common.search_leave_insert then
         vim.api.nvim_create_autocmd("InsertLeave", {
