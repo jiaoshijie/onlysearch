@@ -177,11 +177,11 @@ rt_callbacks.on_finish = function(int)
 
     local stats = nil
     if pctx.match_info.matches > 0 then
-        stats = string.format("(%d matches in %d lines in %d files):(time: %.03fs)",
+        stats = fmt("(%d matches in %d lines in %d files):(time: %.03fs)",
                 pctx.match_info.matches, pctx.match_info.lines, pctx.match_info.files,
                 (vim.uv.hrtime() - pctx.match_info.time) / 1E9)
     else
-        stats = string.format("(no matches)")
+        stats = fmt("(no matches)")
     end
     ui.render_sep(ctx, false, int, stats)
     -- append an empty line at the end of result
