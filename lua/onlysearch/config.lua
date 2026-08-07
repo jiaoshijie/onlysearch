@@ -14,6 +14,7 @@ _M.common = {
     query_history_size = 20,
     keyword = "48-57,-,a-z,A-Z,.,_,=",
     handle_sys_clipboard_paste = true,
+    match_result_limit = 20000,
 }
 
 _M.ui_cfg = {

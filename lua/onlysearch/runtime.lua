@@ -123,6 +123,12 @@ rt_callbacks.on_result = function(item)
     local pctx = ctx.progress_ctx
     if not pctx or pctx.has_error or not item then return end
 
+    if type(cfg.common.match_result_limit) == "number"
+        and pctx.match_info.matches >= cfg.common.match_result_limit then
+        engine.interrupt(ctx, fmt("Hit match result limit(%d)", cfg.common.match_result_limit))
+        return
+    end
+
     if type(item) == "table" then
         if pctx.cur_file_path ~= item.p then
             pctx.cur_file_path = item.p

@@ -128,7 +128,7 @@ end
 --- @param rt_ctx table runtime_ctx
 _M.stop_search = function(rt_ctx)
     assert(rt_ctx ~= nil)
-    rt_ctx.engine_interrupt_fn(rt_ctx)
+    rt_ctx.engine_interrupt_fn(rt_ctx, "User triggered")
 end
 
 --- open a result item and put cursor on the matched line

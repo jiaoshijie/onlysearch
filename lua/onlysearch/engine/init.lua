@@ -256,15 +256,14 @@ _M.close = function(rt_ctx)
     e_ctx.stderr_last_chunk = nil
 end
 
-_M.interrupt = function(rt_ctx)
+_M.interrupt = function(rt_ctx, reason)
     local e_ctx = rt_ctx.engine_ctx
     local uv_ctx = e_ctx.uv_ctx
-    local query = rt_ctx.query.text
 
     if uv_ctx.shutdown_check and not uv.is_active(uv_ctx.shutdown_check)
         and not e_ctx.is_interrupted then
         e_ctx.is_interrupted = uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGINT) == 0
-        kit.echo_info_msg(fmt("Search for `%s` has been interrupted(%s)", query, e_ctx.is_interrupted))
+        kit.echo_info_msg(fmt("Interrupted(%s), reason: %s", e_ctx.is_interrupted, reason))
     end
 end
 
