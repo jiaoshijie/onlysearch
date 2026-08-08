@@ -99,6 +99,7 @@ local ctx = {
     ui_ctx = {
         cache = nil,  -- table?
         cache_start_lnum = nil, -- integer?
+        cache_start_time = nil, -- integer?
         hl_table = nil, -- table?  { { g = string, b = integer, e = integer } }
     },
 

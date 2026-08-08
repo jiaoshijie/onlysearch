@@ -1,5 +1,6 @@
 local cfg = require("onlysearch.config")
 local fmt = string.format
+local hrtime = vim.uv.hrtime
 
 local _M = {}
 
@@ -38,12 +39,16 @@ end
 --- @param line string
 local ui_set_line = function(rt_ctx, lnum, line)
     local ui_ctx = rt_ctx.ui_ctx
+    local t = ui_ctx.cache_start_time
 
-    if #ui_ctx.cache >= cfg.ui_cfg.cache_size then
+    if #ui_ctx.cache >= cfg.ui_cfg.cache_size
+        or (type(t) == "number"
+            and hrtime() - t >= cfg.ui_cfg.cache_flush_interval * 1E6) then
         _M.flush_cache(rt_ctx)
     end
 
     if not ui_ctx.cache_start_lnum then
+        ui_ctx.cache_start_time = vim.uv.hrtime()
         ui_ctx.cache_start_lnum = lnum
     end
 
@@ -253,6 +258,7 @@ function _M.flush_cache(rt_ctx)
         false, ui_ctx.cache)
     ui_ctx.cache = {}
     ui_ctx.cache_start_lnum = nil
+    ui_ctx.cache_start_time = nil
 end
 
 --- @param rt_ctx table  runtime_ctx
