@@ -15,13 +15,18 @@ _M.common = {
     keyword = "48-57,-,a-z,A-Z,.,_,=",
     handle_sys_clipboard_paste = true,
     match_result_limit = 20000,
+    chunk_process_output = {
+        enabled = false,
+        num = 500,
+        interval = 10,  -- unit: ms
+    },
 }
 
 _M.ui_cfg = {
     sep_extmark_lnum = 3,  -- 0-based index
     header_lines = 4,  -- TODO: maybe it should not be here
     cache_size = 500,  -- 500 1000 2000
-    cache_flush_interval = 50, -- 50ms
+    cache_flush_interval = 50, -- unit: ms
     header = {
         search_path = {
             lnum = 1,  -- 0-based index
@@ -93,7 +98,7 @@ _M.engines_cfg = {
 _M.setup = function(cfg)
     if type(cfg) ~= "table" then return end
 
-    _M.common = vim.tbl_extend('force', _M.common, cfg.common or {})
+    _M.common = vim.tbl_deep_extend('force', _M.common, cfg.common or {})
     _M.keymaps_cfg = vim.tbl_deep_extend('force', _M.keymaps_cfg, cfg.keymaps or {})
     _M.engines_cfg[_M.common.engine] = vim.tbl_deep_extend('force',
         _M.engines_cfg[_M.common.engine], cfg.engine or {})

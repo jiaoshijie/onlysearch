@@ -1,5 +1,6 @@
 local kit = require('onlysearch.kit')
 local cfg = require('onlysearch.config')
+local cpo = cfg.common.chunk_process_output
 local uv = vim.uv
 local fmt = string.format
 
@@ -50,10 +51,15 @@ end
 --- @param is_stdout boolean
 --- @param cb fun(data: string[])
 local process_output = function(e_ctx, raw_data, is_stdout, cb)
-    raw_data = raw_data:gsub("\r", "")
-    local data, remained_chunk = kit.split_last_chunk(raw_data)
-
     local last_chunk = is_stdout and e_ctx.stdout_last_chunk or e_ctx.stderr_last_chunk
+    local data, remained_chunk = nil, nil
+
+    if raw_data then
+        data, remained_chunk = kit.split_last_chunk(raw_data:gsub("\r", ""))
+    else
+        data = last_chunk
+    end
+
     if data then
         if last_chunk then
             data = last_chunk .. data
@@ -86,6 +92,10 @@ local uv_close_handles = function(uv_ctx)
     uv_ctx.stdout = nil
     uv_close_handle(uv_ctx.stderr)
     uv_ctx.stderr = nil
+    if cpo.enabled then
+        uv_close_handle(uv_ctx.cpo_timer)
+        uv_ctx.cpo_timer = nil
+    end
     uv_close_handle(uv_ctx.handle)
     uv_ctx.handle = nil
 end
@@ -120,20 +130,26 @@ local uv_shutdown = function(rt_ctx, abort)
     uv.check_stop(uv_ctx.shutdown_check)
     uv.read_stop(uv_ctx.stdout)
     uv.read_stop(uv_ctx.stderr)
+    if cpo.enabled then
+        uv.timer_stop(uv_ctx.cpo_timer)
+    end
 
     uv_close_handles(uv_ctx)
 end
 
-local uv_gracefully_shutdown = function(rt_ctx)
+local uv_gracefully_shutdown = function(rt_ctx, on_finish_cb)
     local e_ctx = rt_ctx.engine_ctx
     local uv_ctx = e_ctx.uv_ctx
 
     if not uv_ctx.pid then return end
-
     uv.check_start(uv_ctx.shutdown_check, function()
         -- NOTE: Wait the spawned process closes the stdout and stderr.
         -- Ensure all data has been processed successfully.
         if not uv_is_stdout_stderr_closed(uv_ctx) then return end
+
+        if cpo.enabled and #e_ctx.cpo_cache ~= 0 then return end
+
+        on_finish_cb()
 
         uv_shutdown(rt_ctx, false)
     end)
@@ -174,6 +190,51 @@ _M.search = function(rt_ctx)
     uv_ctx.stderr = uv.new_pipe(false)
     uv_ctx.shutdown_check = uv.new_check()
 
+    local on_result_or_error = function(v)
+        if not e_ctx.error_termed then
+            if not e_ctx.is_raw_data then
+                v = backend.parse_output(v)
+                if e_ctx.is_raw_data == nil then
+                    e_ctx.is_raw_data = type(v) == "string"
+                end
+            end
+            rt_cb.on_result(v)
+        else
+            rt_cb.on_error(v)
+        end
+    end
+
+    local stdout_or_stderr_cb = function(values)
+        if not cpo.enabled  then
+            for _, v in ipairs(values) do
+                on_result_or_error(v)
+            end
+        else
+            table.insert(e_ctx.cpo_cache, values)
+        end
+    end
+
+    if cpo.enabled then
+        uv_ctx.cpo_timer = uv.new_timer()
+        e_ctx.cpo_cache = {}
+        uv.timer_start(uv_ctx.cpo_timer, 5, cpo.interval, vim.schedule_wrap(function()
+            if not uv_ctx.pid or work_id ~= e_ctx.id
+                or e_ctx.is_interrupted then
+                e_ctx.cpo_cache = {}
+            end
+
+            local count = 0;
+            while #e_ctx.cpo_cache > 0 and count <= cpo.num do
+                local outer = e_ctx.cpo_cache[1]
+                while #outer > 0 and count <= cpo.num do
+                    on_result_or_error(table.remove(outer, 1))
+                    count = count + 1
+                end
+                if #outer == 0 then table.remove(e_ctx.cpo_cache, 1) end
+            end
+        end))
+    end
+
     uv_ctx.handle, uv_ctx.pid = uv.spawn(
         e_ctx.cmd, {
             stdio = { nil, uv_ctx.stdout, uv_ctx.stderr },
@@ -181,74 +242,57 @@ _M.search = function(rt_ctx)
             cwd = e_ctx.cwd,
             env = { "GREP_COLORS=ms=0:mc=:sl=:cx=:fn=:ln=:bn=:se=:ne" },
         }, vim.schedule_wrap(function(code, signal)
-            local interrupted = signal == vim.uv.constants.SIGINT and e_ctx.is_interrupted
-            if code ~= 0 or (signal ~= 0 and not interrupted) then
+            if code ~= 0 or (signal ~= 0 and not e_ctx.is_interrupted) then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",
                         e_ctx.cmd, code, signal))
             end
 
-            if work_id == e_ctx.id then
-                rt_cb.on_finish(interrupted)
-            end
-
-            uv_gracefully_shutdown(rt_ctx)
+            uv_gracefully_shutdown(rt_ctx, vim.schedule_wrap(function()
+                if work_id == e_ctx.id then
+                    rt_cb.on_finish(e_ctx.is_interrupted)
+                end
+            end))
         end)
     )
 
-    local stdout_cb = function(values)
-        for _, v in ipairs(values) do
-            if not e_ctx.is_raw_data or e_ctx.is_raw_data == nil then
-                v = backend.parse_output(v)
-                if e_ctx.is_raw_data == nil then
-                    e_ctx.is_raw_data = type(v) == "string"
-                end
-            end
-            rt_cb.on_result(v)
-        end
-    end
-
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
+        if data == nil then uv_close_handle(uv_ctx.stdout) end
+
+        if err then
+            kit.echo_err_msg("libuv reading from stdout failed")
+            return
+        end
+
         if not uv_ctx.pid or work_id ~= e_ctx.id
             or e_ctx.is_interrupted or e_ctx.error_termed then
             return
         end
 
-        if err then
-            kit.echo_err_msg("libuv reading from stdout failed")
-        elseif data then
-            process_output(e_ctx, data, true, stdout_cb)
-        else
-            if e_ctx.stdout_last_chunk then
-                rt_cb.on_result({ backend.parse_output(e_ctx.stdout_last_chunk) })
-                e_ctx.stdout_last_chunk = nil
-            end
-            uv_close_handle(uv_ctx.stdout)
-        end
+        process_output(e_ctx, data, true, stdout_or_stderr_cb)
     end))
-    uv.read_start(uv_ctx.stderr, vim.schedule_wrap(function(err, data)
-        if not uv_ctx.pid or work_id ~= e_ctx.id
-            or e_ctx.is_interrupted then
-            return
-        end
 
-        if not e_ctx.error_termed then
-            e_ctx.error_termed = true
-            uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGTERM)
+    uv.read_start(uv_ctx.stderr, vim.schedule_wrap(function(err, data)
+        if data == nil then
+            uv_close_handle(uv_ctx.stderr)
+            if not e_ctx.error_termed then return end  -- no error happened throughout the search process
         end
 
         if err then
             kit.echo_err_msg("libuv reading from stderr failed")
-        elseif data then
-            process_output(e_ctx, data, false, function(values)
-                for _, v in ipairs(values) do rt_cb.on_error(v) end
-            end)
-        else
-            if e_ctx.stderr_last_chunk then
-                rt_cb.on_error(e_ctx.stderr_last_chunk)
-                e_ctx.stderr_last_chunk = nil
-            end
-            uv_close_handle(uv_ctx.stderr)
+            return
         end
+
+        if not uv_ctx.pid or work_id ~= e_ctx.id or e_ctx.is_interrupted then
+            return
+        end
+
+        if data and not e_ctx.error_termed then
+            e_ctx.error_termed = true
+            if cpo.enabled then e_ctx.cpo_cache = {} end
+            uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGTERM)
+        end
+
+        process_output(e_ctx, data, false, stdout_or_stderr_cb)
     end))
 end
 
@@ -271,8 +315,9 @@ _M.interrupt = function(rt_ctx, reason)
 
     if uv_ctx.shutdown_check and not uv.is_active(uv_ctx.shutdown_check)
         and not e_ctx.is_interrupted then
-        e_ctx.is_interrupted = uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGINT) == 0
-        kit.echo_info_msg(fmt("Interrupted(%s), reason: %s", e_ctx.is_interrupted, reason))
+        local ret = uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGINT) == 0
+        kit.echo_info_msg(fmt("Interrupted(%s), reason: %s", ret, reason))
+        e_ctx.is_interrupted = true
     end
 end
 

@@ -77,6 +77,7 @@ local ctx = {
         error_termed = nil,       -- boolean
         stdout_last_chunk = nil,  -- string?
         stderr_last_chunk = nil,  -- string?
+        cpo_cache = nil,          -- { string[], string[], ... }
 
         -- uv
         uv_ctx = {
@@ -84,6 +85,7 @@ local ctx = {
             handle = nil, -- uv_process_t
             stdout = nil, -- uv_pipe_t
             stderr = nil, -- uv_pipe_t
+            cpo_timer = nil, -- uv_timer_t
             shutdown_check = nil, -- uv_check_t
         }
     },
