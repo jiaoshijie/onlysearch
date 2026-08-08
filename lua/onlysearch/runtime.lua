@@ -54,6 +54,7 @@ local ctx = {
     query = nil,  -- Query
     lookup_table = nil,
     selected_items = nil,  -- table
+    ignore_search_limit = nil, -- boolean
 
     progress_ctx = {
         has_error = nil,
@@ -128,7 +129,8 @@ rt_callbacks.on_result = function(item)
     local pctx = ctx.progress_ctx
     if not pctx or pctx.has_error or not item then return end
 
-    if type(cfg.common.match_result_limit) == "number"
+    if not ctx.ignore_search_limit
+        and type(cfg.common.match_result_limit) == "number"
         and pctx.match_info.matches >= cfg.common.match_result_limit then
         engine.interrupt(ctx, fmt("Hit match result limit(%d)", cfg.common.match_result_limit))
         return
