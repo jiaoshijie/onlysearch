@@ -74,6 +74,7 @@ local ctx = {
         cwd = nil,
         is_raw_data = nil,        -- boolean
         is_interrupted = nil,     -- boolean
+        error_termed = nil,       -- boolean
         stdout_last_chunk = nil,  -- string?
         stderr_last_chunk = nil,  -- string?
 

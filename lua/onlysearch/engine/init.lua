@@ -164,6 +164,7 @@ _M.search = function(rt_ctx)
     e_ctx.cwd = vim.fn.getcwd()
     e_ctx.is_raw_data = nil
     e_ctx.is_interrupted = nil
+    e_ctx.error_termed = nil
     e_ctx.stdout_last_chunk = nil
     e_ctx.stderr_last_chunk = nil
 
@@ -208,7 +209,7 @@ _M.search = function(rt_ctx)
 
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
         if not uv_ctx.pid or work_id ~= e_ctx.id
-            or e_ctx.is_interrupted then
+            or e_ctx.is_interrupted or e_ctx.error_termed then
             return
         end
 
@@ -228,6 +229,11 @@ _M.search = function(rt_ctx)
         if not uv_ctx.pid or work_id ~= e_ctx.id
             or e_ctx.is_interrupted then
             return
+        end
+
+        if not e_ctx.error_termed then
+            e_ctx.error_termed = true
+            uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGTERM)
         end
 
         if err then
