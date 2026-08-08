@@ -465,6 +465,7 @@ _M.close = function()
     ctx.query = nil
     ctx.lookup_table = nil
     ctx.selected_items = nil
+    ctx.progress_ctx = nil
 
     if ctx.prev_backspace_opt then
         vim.opt.backspace = ctx.prev_backspace_opt
@@ -473,6 +474,8 @@ _M.close = function()
     if ctx.orignal_vim_dot_paste then
         vim.paste = ctx.orignal_vim_dot_paste
     end
+
+    kit.trace("quit onlysearch", ctx)
 end
 
 --- @return boolean
