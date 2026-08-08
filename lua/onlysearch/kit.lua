@@ -9,6 +9,8 @@ local lwin_options = {
     foldlevel = 0,
 }
 
+local debug_enabled = false
+
 --- @param msg string
 _M.echo_err_msg = function(msg)
     vim.api.nvim_echo({ { fmt("OnlySearch: %s", msg) } }, true, { err = true })
@@ -146,6 +148,15 @@ _M.restore_local_win_options = function(winid)
     set('foldexpr', lwin_options.foldexpr, { win = winid })
     set('foldenable', lwin_options.foldenable, { win = winid })
     set('foldlevel', lwin_options.foldlevel, { win = winid })
+end
+
+function _M.trace(...)
+    if not debug_enabled then
+        return
+    end
+
+    local info = debug.getinfo(2, "Sl")
+    print(fmt("%s:%d:", info.short_src, info.currentline) .. vim.inspect({...}))
 end
 
 return _M

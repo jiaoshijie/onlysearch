@@ -114,6 +114,7 @@ local uv_is_stdout_stderr_closed = function(uv_ctx)
 end
 
 local uv_shutdown = function(rt_ctx, abort)
+    kit.trace("uv_shutdown has been called", abort)
     local e_ctx = rt_ctx.engine_ctx
     local uv_ctx = e_ctx.uv_ctx
 
@@ -135,6 +136,7 @@ local uv_shutdown = function(rt_ctx, abort)
     end
 
     uv_close_handles(uv_ctx)
+    kit.trace("uv_shutdown has finished", e_ctx)
 end
 
 local uv_gracefully_shutdown = function(rt_ctx, on_finish_cb)
@@ -146,8 +148,10 @@ local uv_gracefully_shutdown = function(rt_ctx, on_finish_cb)
         -- NOTE: Wait the spawned process closes the stdout and stderr.
         -- Ensure all data has been processed successfully.
         if not uv_is_stdout_stderr_closed(uv_ctx) then return end
+        kit.trace("uv.check stdout and stderr has been closed")
 
         if cpo.enabled and #e_ctx.cpo_cache ~= 0 then return end
+        kit.trace("uv.check cpo has finished", cpo.enabled)
 
         on_finish_cb()
 
@@ -167,6 +171,8 @@ _M.search = function(rt_ctx)
         kit.echo_err_msg("No backend engine found")
         return
     end
+
+    kit.trace("=== engine search process started")
 
     local work_id = unique_id
     unique_id = unique_id + 1
@@ -242,6 +248,7 @@ _M.search = function(rt_ctx)
             cwd = e_ctx.cwd,
             env = { "GREP_COLORS=ms=0:mc=:sl=:cx=:fn=:ln=:bn=:se=:ne" },
         }, vim.schedule_wrap(function(code, signal)
+            kit.trace("uv.spawn on_exit()", e_ctx.cmd, code, signal, e_ctx.is_interrupted)
             if code ~= 0 or (signal ~= 0 and not e_ctx.is_interrupted) then
                 kit.echo_info_msg(fmt("`%s` exited with code %d and signal %d",
                         e_ctx.cmd, code, signal))
@@ -249,6 +256,7 @@ _M.search = function(rt_ctx)
 
             uv_gracefully_shutdown(rt_ctx, vim.schedule_wrap(function()
                 if work_id == e_ctx.id then
+                    kit.trace("uv.spawn on_finish_cb")
                     rt_cb.on_finish(e_ctx.is_interrupted)
                 end
             end))
@@ -256,7 +264,10 @@ _M.search = function(rt_ctx)
     )
 
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
-        if data == nil then uv_close_handle(uv_ctx.stdout) end
+        if data == nil then
+            kit.trace("uv.read_start close stdout handle")
+            uv_close_handle(uv_ctx.stdout)
+        end
 
         if err then
             kit.echo_err_msg("libuv reading from stdout failed")
@@ -273,6 +284,7 @@ _M.search = function(rt_ctx)
 
     uv.read_start(uv_ctx.stderr, vim.schedule_wrap(function(err, data)
         if data == nil then
+            kit.trace("uv.read_start close stderr handle")
             uv_close_handle(uv_ctx.stderr)
             if not e_ctx.error_termed then return end  -- no error happened throughout the search process
         end
