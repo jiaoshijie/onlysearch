@@ -33,6 +33,23 @@ function _M.render_header(rt_ctx)
     end
 end
 
+--- @param rt_ctx table  runtime_ctx
+--- @param lnum integer
+--- @param line string
+local ui_set_line = function(rt_ctx, lnum, line)
+    local ui_ctx = rt_ctx.ui_ctx
+
+    if #ui_ctx.cache >= cfg.ui_cfg.cache_size then
+        _M.flush_cache(rt_ctx)
+    end
+
+    if not ui_ctx.cache_start_lnum then
+        ui_ctx.cache_start_lnum = lnum
+    end
+
+    table.insert(ui_ctx.cache, line)
+end
+
 --- render the file name of the result
 --- @param rt_ctx table  runtime_ctx
 --- @param lnum integer the line number which the filename should be place at
@@ -42,12 +59,15 @@ function _M.render_filename(rt_ctx, lnum, line)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum
     end
-    local ns = rt_ctx.env_weak_ref.ns
+    local ui_ctx = rt_ctx.ui_ctx
 
-    vim.api.nvim_buf_set_lines(rt_ctx.bufnr, lnum, lnum, false, { "", line })
+    ui_set_line(rt_ctx, lnum, "")
     lnum = lnum + 1
-    vim.hl.range(rt_ctx.bufnr, ns.result_id, "OnlysearchFilename", { lnum, 0 },
-        { lnum, vim.api.nvim_strwidth(line) }, { inclusive = false })
+    ui_set_line(rt_ctx, lnum, line)
+
+    ui_ctx.hl_table[lnum] = {
+        { g = "OnlysearchFilename", b = 0, e = vim.api.nvim_strwidth(line) }
+    }
 
     return lnum + 1
 end
@@ -63,22 +83,26 @@ function _M.render_match_line(rt_ctx, lnum, mlnum, line, subms)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum
     end
-    local ns = rt_ctx.env_weak_ref.ns
+    local ui_ctx = rt_ctx.ui_ctx
 
     -- NOTE: cut long line to 255 characters
     line = string.sub(line, 0, 255)
-    vim.api.nvim_buf_set_lines(rt_ctx.bufnr, lnum, lnum, false, { mlnum .. ':' .. line })
+    ui_set_line(rt_ctx, lnum, fmt("%d:%s", mlnum, line))
     local len = vim.api.nvim_strwidth('' .. mlnum)
 
-    vim.hl.range(rt_ctx.bufnr, ns.result_id, "OnlysearchMatchLNum", { lnum, 0 },
-        { lnum, len }, { inclusive = false })
+    ui_ctx.hl_table[lnum] = {
+        { g = "OnlysearchMatchLNum", b = 0, e = len }
+    }
     len = len + 1  -- len(':')
 
     if subms then
         for _, val in ipairs(subms) do
-            if len + val.s < 255 and len + val.e < 255 then
-                vim.hl.range(rt_ctx.bufnr, ns.result_id, "OnlysearchMatchCtx",
-                    { lnum, len + val.s }, { lnum, len + val.e }, { inclusive = false })
+            if len + val.s < 255 then
+                table.insert(ui_ctx.hl_table[lnum], {
+                    g = "OnlysearchMatchCtx",
+                    b = len + val.s,
+                    e = len + val.e < 255 and len + val.e or -1,
+                })
             end
         end
     end
@@ -116,7 +140,7 @@ function _M.render_message(rt_ctx, lnum, line)
         return lnum
     end
 
-    vim.api.nvim_buf_set_lines(rt_ctx.bufnr, lnum, lnum, false, { line })
+    ui_set_line(rt_ctx, lnum, line)
     return lnum + 1
 end
 
@@ -129,11 +153,13 @@ function _M.render_error(rt_ctx, lnum, line)
     if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
         return lnum
     end
-    local ns = rt_ctx.env_weak_ref.ns
+    local ui_ctx = rt_ctx.ui_ctx
 
-    vim.api.nvim_buf_set_lines(rt_ctx.bufnr, lnum, lnum, false, { line })
-    vim.hl.range(rt_ctx.bufnr, ns.result_id, "OnlysearchError", { lnum, 0 },
-        { lnum, -1 }, { inclusive = false })
+    ui_set_line(rt_ctx, lnum, line)
+
+    ui_ctx.hl_table[lnum] = {
+        { g = "OnlysearchError", b = 0, e = -1 }
+    }
 
     return lnum + 1
 end
@@ -180,6 +206,11 @@ function _M.clear_result(rt_ctx)
         return
     end
     local ns = rt_ctx.env_weak_ref.ns
+    local ui_ctx = rt_ctx.ui_ctx
+
+    ui_ctx.cache_start_lnum = nil
+    ui_ctx.cache = {}
+    ui_ctx.hl_table = {}
 
     vim.api.nvim_buf_clear_namespace(rt_ctx.bufnr, ns.result_id, 0, -1)
     vim.api.nvim_buf_clear_namespace(rt_ctx.bufnr, ns.select_id, 0, -1)
@@ -207,6 +238,63 @@ function _M.render_query(rt_ctx, query)
     })
 
     _M.render_header(rt_ctx)
+end
+
+--- @param rt_ctx table  runtime_ctx
+function _M.flush_cache(rt_ctx)
+    if not rt_ctx.bufnr or not vim.api.nvim_buf_is_loaded(rt_ctx.bufnr) then
+        return
+    end
+    local ui_ctx = rt_ctx.ui_ctx
+
+    if #ui_ctx.cache == 0 or not ui_ctx.cache_start_lnum then return end
+
+    vim.api.nvim_buf_set_lines(rt_ctx.bufnr, ui_ctx.cache_start_lnum, -1,
+        false, ui_ctx.cache)
+    ui_ctx.cache = {}
+    ui_ctx.cache_start_lnum = nil
+end
+
+--- @param rt_ctx table  runtime_ctx
+--- @param result_id integer
+function _M.register_result_ns_provider(rt_ctx, result_id)
+    local ui_ctx = rt_ctx.ui_ctx
+
+    local provider_on_range_cb = function(_, _, buf, row_b, _, row_e, col_e)
+        if ui_ctx.hl_table == nil then return end
+
+        if col_e == 0 then
+            row_e = row_e - 1
+        end
+
+        for lnum = row_b, row_e do
+            local hl = ui_ctx.hl_table[lnum]
+            if hl == nil then goto continue end
+
+            for _, v in ipairs(hl) do
+                vim.api.nvim_buf_set_extmark(buf, result_id, lnum, v.b, {
+                    hl_group = v.g,
+                    end_line = lnum,
+                    end_col = v.e,
+
+                    undo_restore = false,
+                    strict = true,  -- default
+                    ephemeral = true,
+                })
+            end
+
+            ::continue::
+        end
+
+        return cfg.ui_cfg.header_lines
+    end
+
+    vim.api.nvim_set_decoration_provider(result_id, {
+        on_win = function(_, _, buf, _, _)
+            return buf == rt_ctx.bufnr
+        end,
+        on_range = provider_on_range_cb,
+    })
 end
 
 return _M

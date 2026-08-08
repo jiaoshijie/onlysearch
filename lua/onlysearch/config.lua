@@ -20,6 +20,7 @@ _M.common = {
 _M.ui_cfg = {
     sep_extmark_lnum = 3,  -- 0-based index
     header_lines = 4,  -- TODO: maybe it should not be here
+    cache_size = 500,  -- 500 1000 2000
     header = {
         search_path = {
             lnum = 1,  -- 0-based index

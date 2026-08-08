@@ -93,6 +93,12 @@ local ctx = {
         p_winid = nil,
     },
 
+    ui_ctx = {
+        cache = nil,  -- table?
+        cache_start_lnum = nil, -- integer?
+        hl_table = nil, -- table?  { { g = string, b = integer, e = integer } }
+    },
+
     orignal_vim_dot_paste = nil,
     prev_backspace_opt = nil,
 }
@@ -178,7 +184,12 @@ end
 
 rt_callbacks.on_finish = function(int)
     local pctx = ctx.progress_ctx
-    if not pctx or pctx.has_error then return end
+    if not pctx then return end
+
+    if pctx.has_error then
+        ui.flush_cache(ctx)
+        return
+    end
 
     local stats = nil
     if pctx.match_info.matches > 0 then
@@ -192,6 +203,8 @@ rt_callbacks.on_finish = function(int)
     -- append an empty line at the end of result
     -- for making fold correct at the last match line
     pctx.cur_lnum = ui.render_message(ctx, pctx.cur_lnum, "")
+
+    ui.flush_cache(ctx)
 end
 
 --- @return boolean
@@ -215,6 +228,7 @@ local validate_env = function()
     end
     if rt_env.ns.result_id == nil then
         rt_env.ns.result_id = vim.api.nvim_create_namespace("onlysearch_result_ns")
+        ui.register_result_ns_provider(ctx, rt_env.ns.result_id)
     end
     if rt_env.ns.select_id == nil then
         rt_env.ns.select_id = vim.api.nvim_create_namespace("onlysearch_select_ns")
@@ -424,6 +438,8 @@ _M.close = function()
 
     vim.api.nvim_del_augroup_by_name("onlysearch_rt_event")
     engine.close(ctx)
+
+    ui.clear_result(ctx)
 
     ctx.env_weak_ref = nil
     ctx.query_hist_array_ref = nil
