@@ -28,15 +28,18 @@ local gen_cmd = function(backend, query)
     if query.filters and #query.filters > 0 then
         backend.parse_filters(args, query.filters)
     end
-    table.insert(args, "--")
 
     -- 3. add query text
+    table.insert(args, "-e")
     table.insert(args, query.text)
+
+    table.insert(args, "--")
+
     -- 4. add path
     if query.paths and #query.paths > 0 then
         vim.list_extend(args, kit.scan_paths(query.paths))
     else
-        table.insert(args, '.')
+        table.insert(args, ".")
     end
 
     return cmd, args
