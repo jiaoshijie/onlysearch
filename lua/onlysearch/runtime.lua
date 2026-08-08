@@ -75,6 +75,7 @@ local ctx = {
         is_raw_data = nil,        -- boolean
         is_interrupted = nil,     -- boolean
         stdout_last_chunk = nil,  -- string?
+        stderr_last_chunk = nil,  -- string?
 
         -- uv
         uv_ctx = {

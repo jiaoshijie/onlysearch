@@ -47,29 +47,29 @@ end
 
 --- @param e_ctx table runtime_ctx.engine_ctx
 --- @param raw_data string
+--- @param is_stdout boolean
 --- @param cb fun(data: string[])
-local process_stdout = function(e_ctx, raw_data, cb)
+local process_output = function(e_ctx, raw_data, is_stdout, cb)
     raw_data = raw_data:gsub("\r", "")
     local data, remained_chunk = kit.split_last_chunk(raw_data)
 
+    local last_chunk = is_stdout and e_ctx.stdout_last_chunk or e_ctx.stderr_last_chunk
     if data then
-        if e_ctx.stdout_last_chunk then
-            data = e_ctx.stdout_last_chunk .. data
+        if last_chunk then
+            data = last_chunk .. data
         end
         cb(vim.split(data, '\n', { plain = true, trimempty = false }))
-        e_ctx.stdout_last_chunk = remained_chunk
-    elseif remained_chunk then
-        e_ctx.stdout_last_chunk = (e_ctx.stdout_last_chunk or '') .. remained_chunk
+        last_chunk = remained_chunk
+    else
+        if remained_chunk then
+            last_chunk = (last_chunk or '') .. remained_chunk
+        end
     end
-end
 
---- @param raw_data string
---- @param cb fun(data: string[])
-local process_stderr = function(raw_data, cb)
-    local data = raw_data:gsub("\r", "")
-
-    if data then
-        cb(vim.split(data, '\n', { plain = true, trimempty = false }))
+    if is_stdout then
+        e_ctx.stdout_last_chunk = last_chunk
+    else
+        e_ctx.stderr_last_chunk = last_chunk
     end
 end
 
@@ -165,6 +165,7 @@ _M.search = function(rt_ctx)
     e_ctx.is_raw_data = nil
     e_ctx.is_interrupted = nil
     e_ctx.stdout_last_chunk = nil
+    e_ctx.stderr_last_chunk = nil
 
     rt_cb.on_start()
 
@@ -214,7 +215,7 @@ _M.search = function(rt_ctx)
         if err then
             kit.echo_err_msg("libuv reading from stdout failed")
         elseif data then
-            process_stdout(e_ctx, data, stdout_cb)
+            process_output(e_ctx, data, true, stdout_cb)
         else
             if e_ctx.stdout_last_chunk then
                 rt_cb.on_result({ backend.parse_output(e_ctx.stdout_last_chunk) })
@@ -232,11 +233,14 @@ _M.search = function(rt_ctx)
         if err then
             kit.echo_err_msg("libuv reading from stderr failed")
         elseif data then
-            process_stderr(data, function(values)
+            process_output(e_ctx, data, false, function(values)
                 for _, v in ipairs(values) do rt_cb.on_error(v) end
             end)
-            uv.process_kill(uv_ctx.handle, vim.uv.constants.SIGTERM)
         else
+            if e_ctx.stderr_last_chunk then
+                rt_cb.on_error(e_ctx.stderr_last_chunk)
+                e_ctx.stderr_last_chunk = nil
+            end
             uv_close_handle(uv_ctx.stderr)
         end
     end))
@@ -252,6 +256,7 @@ _M.close = function(rt_ctx)
     e_ctx.cwd = nil
     e_ctx.is_raw_data = nil
     e_ctx.stdout_last_chunk = nil
+    e_ctx.stderr_last_chunk = nil
 end
 
 _M.interrupt = function(rt_ctx, reason)
