@@ -30,6 +30,7 @@ function _M.render_header(rt_ctx)
             virt_lines_leftcol = true,
             virt_lines_above = true,
             right_gravity = false,
+            undo_restore = false,
         })
     end
 end
@@ -200,6 +201,7 @@ function _M.render_sep(rt_ctx, is_error, is_interrupted, msg)
             virt_lines_leftcol = true,
             virt_lines_above = false,
             right_gravity = false,
+            undo_restore = false,
         }
     )
 end
