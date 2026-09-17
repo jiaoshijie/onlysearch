@@ -1,14 +1,6 @@
 local _M = {}
 local fmt = string.format
 
-local lwin_options = {
-    colorcolumn = "",
-    foldmethod = "manual",
-    foldexpr = "0",
-    foldenable = true,
-    foldlevel = 0,
-}
-
 local debug_enabled = false
 
 --- @param msg string
@@ -129,27 +121,6 @@ _M.split_last_chunk = function(str)
     return nil, str
 end
 
---- @param winid integer
-_M.backup_local_win_options = function(winid)
-    local get = vim.api.nvim_get_option_value
-    lwin_options.colorcolumn = get("colorcolumn", { win = winid })
-    lwin_options.foldmethod = get("foldmethod", { win = winid })
-    lwin_options.foldexpr = get("foldexpr", { win = winid })
-    lwin_options.foldenable = get("foldenable", { win = winid })
-    lwin_options.foldlevel = get("foldlevel", { win = winid })
-end
-
-
---- @param winid integer
-_M.restore_local_win_options = function(winid)
-    local set = vim.api.nvim_set_option_value
-    set('colorcolumn', lwin_options.colorcolumn, { win = winid })
-    set('foldmethod', lwin_options.foldmethod, { win = winid })
-    set('foldexpr', lwin_options.foldexpr, { win = winid })
-    set('foldenable', lwin_options.foldenable, { win = winid })
-    set('foldlevel', lwin_options.foldlevel, { win = winid })
-end
-
 function _M.trace(...)
     if not debug_enabled then
         return
@@ -157,6 +128,18 @@ function _M.trace(...)
 
     local info = debug.getinfo(2, "Sl")
     print(fmt("%s:%d:", info.short_src, info.currentline) .. vim.inspect({...}))
+end
+
+--- @param bufnr integer
+--- @param cb fun()
+_M.modify_buf = function(bufnr, cb)
+    if not vim.api.nvim_buf_is_loaded(bufnr) then
+        return
+    end
+    local opts = { buf = bufnr, scope = "local" }
+    vim.api.nvim_set_option_value("modifiable", true, opts)
+    cb()
+    vim.api.nvim_set_option_value("modifiable", false, opts)
 end
 
 return _M

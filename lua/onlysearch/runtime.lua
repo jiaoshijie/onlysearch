@@ -270,10 +270,8 @@ local set_target_winid = function()
 end
 
 local set_option = function()
-    local win_opt = { win = ctx.winid }
-    local buf_opt = { buf = ctx.bufnr }
-
-    kit.backup_local_win_options(ctx.winid)
+    local win_opt = { win = ctx.winid, scope = "local" }
+    local buf_opt = { buf = ctx.bufnr, scope = "local" }
 
     -- set buffer name --
     vim.api.nvim_buf_set_name(ctx.bufnr, cfg.buf_name)

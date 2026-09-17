@@ -66,9 +66,9 @@ local qh_refresh = function(rt_ctx, only_preview)
         for _, v in ipairs(qh_arr) do
             table.insert(lines, v.text)
         end
-        vim.api.nvim_set_option_value("modifiable", true, { buf = qh_ctx.bufnr })
-        vim.api.nvim_buf_set_lines(qh_ctx.bufnr, 0, -1, false, lines)
-        vim.api.nvim_set_option_value("modifiable", false, { buf = qh_ctx.bufnr })
+        kit.modify_buf(qh_ctx.bufnr, function()
+            vim.api.nvim_buf_set_lines(qh_ctx.bufnr, 0, -1, false, lines)
+        end)
     end
 
     local ok, pos = pcall(vim.api.nvim_win_get_cursor, qh_ctx.winid)
@@ -83,9 +83,9 @@ local qh_refresh = function(rt_ctx, only_preview)
         query.text, query.paths or "",
         query.flags or "", query.filters or "",
     } or {}
-    vim.api.nvim_set_option_value("modifiable", true, { buf = qh_ctx.p_bufnr })
-    vim.api.nvim_buf_set_lines(qh_ctx.p_bufnr, 0, 4, false, lines)
-    vim.api.nvim_set_option_value("modifiable", false, { buf = qh_ctx.p_bufnr })
+    kit.modify_buf(qh_ctx.p_bufnr, function()
+        vim.api.nvim_buf_set_lines(qh_ctx.p_bufnr, 0, 4, false, lines)
+    end)
 end
 
 --- @param rt_ctx table runtime_ctx
@@ -132,30 +132,32 @@ local set_event = function(rt_ctx)
 end
 
 local set_options = function(qh_ctx)
-    vim.api.nvim_set_option_value('cursorline', true, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('cursorlineopt', "both", { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('number', true, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('relativenumber', false, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('wrap', false, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('spell', false, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('signcolumn', 'no', { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('colorcolumn', '0', { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('foldenable', false, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('list', false, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('scrolloff', 0, { win = qh_ctx.winid })
-    vim.api.nvim_set_option_value('winbar', "", { win = qh_ctx.winid })
+    local opts = { win = qh_ctx.winid, scope = "local" }
+    vim.api.nvim_set_option_value('cursorline', true, opts)
+    vim.api.nvim_set_option_value('cursorlineopt', "both", opts)
+    vim.api.nvim_set_option_value('number', true, opts)
+    vim.api.nvim_set_option_value('relativenumber', false, opts)
+    vim.api.nvim_set_option_value('wrap', false, opts)
+    vim.api.nvim_set_option_value('spell', false, opts)
+    vim.api.nvim_set_option_value('signcolumn', 'no', opts)
+    vim.api.nvim_set_option_value('colorcolumn', '0', opts)
+    vim.api.nvim_set_option_value('foldenable', false, opts)
+    vim.api.nvim_set_option_value('list', false, opts)
+    vim.api.nvim_set_option_value('scrolloff', 0, opts)
+    vim.api.nvim_set_option_value('winbar', "", opts)
 
-    vim.api.nvim_set_option_value('cursorline', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('number', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('relativenumber', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('wrap', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('spell', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('signcolumn', 'no', { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('colorcolumn', '0', { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('foldenable', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('list', false, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('scrolloff', 0, { win = qh_ctx.p_winid })
-    vim.api.nvim_set_option_value('winbar', "", { win = qh_ctx.p_winid })
+    opts.win = qh_ctx.p_winid
+    vim.api.nvim_set_option_value('cursorline', false, opts)
+    vim.api.nvim_set_option_value('number', false, opts)
+    vim.api.nvim_set_option_value('relativenumber', false, opts)
+    vim.api.nvim_set_option_value('wrap', false, opts)
+    vim.api.nvim_set_option_value('spell', false, opts)
+    vim.api.nvim_set_option_value('signcolumn', 'no', opts)
+    vim.api.nvim_set_option_value('colorcolumn', '0', opts)
+    vim.api.nvim_set_option_value('foldenable', false, opts)
+    vim.api.nvim_set_option_value('list', false, opts)
+    vim.api.nvim_set_option_value('scrolloff', 0, opts)
+    vim.api.nvim_set_option_value('winbar', "", opts)
 end
 
 local qh_render = function(rt_ctx, main, preview)
@@ -172,7 +174,9 @@ local qh_render = function(rt_ctx, main, preview)
         noautocmd = true,
         border = "rounded",
     })
-    vim.api.nvim_set_option_value('winblend', 0, { win = qh_ctx.winid })
+    local opts = { win = qh_ctx.winid, scope = "local" }
+    vim.api.nvim_set_option_value('winblend', 0, opts)
+
     qh_ctx.p_winid = vim.api.nvim_open_win(qh_ctx.p_bufnr, false, {
         relative = preview.relative,
         win = preview.win,
@@ -184,7 +188,8 @@ local qh_render = function(rt_ctx, main, preview)
         noautocmd = true,
         border = "rounded",
     })
-    vim.api.nvim_set_option_value('winblend', 0, { win = qh_ctx.p_winid })
+    opts.win = qh_ctx.p_winid
+    vim.api.nvim_set_option_value('winblend', 0, opts)
     set_options(qh_ctx)
 end
 

@@ -46,7 +46,6 @@ local chose_window = function(winid)
     --    the onlysearch window is the only window in this tabpage
     vim.cmd("silent keepalt vertical new")
     winid = vim.fn.win_getid()
-    kit.restore_local_win_options(winid)
 
     return winid
 end
