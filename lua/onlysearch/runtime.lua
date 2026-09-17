@@ -329,7 +329,7 @@ local set_events = function(ev_group)
 end
 
 local set_keymaps = function()
-    local map_opts = { noremap = true, silent = true, buffer = ctx.bufnr }
+    local map_opts = { silent = true, buffer = ctx.bufnr }
 
     for k, f in pairs(cfg.keymaps_cfg.normal) do
         vim.keymap.set("n", k, function() action[f](ctx) end, map_opts)
@@ -368,7 +368,7 @@ local set_limitation = function(ev_group)
         callback = function() vim.opt.backspace = ctx.prev_backspace_opt end
     })
 
-    local map_opts = { noremap = true, silent = true, buffer = ctx.bufnr }
+    local map_opts = { silent = true, buffer = ctx.bufnr }
     -- NOTE: limatation keymaps
     vim.keymap.set('n', 'dd', '<nop>', map_opts)
     vim.keymap.set('n', 'd', function() action.limit.modify_text('d') end, map_opts)
