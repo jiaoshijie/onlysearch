@@ -311,6 +311,19 @@ local set_events = function(ev_group)
             end
         end,
     })
+    vim.api.nvim_create_autocmd("BufReadCmd", {
+        buffer = ctx.bufnr,
+        group = ev_group,
+        callback = function()
+            local query = ctx.query
+            if not query then
+                ui.render_header(ctx)
+            else
+                ui.render_query(ctx, query)
+                engine.search(ctx)
+            end
+        end,
+    })
     vim.api.nvim_create_autocmd("VimLeavePre", {
         pattern = "*",
         group = ev_group,
