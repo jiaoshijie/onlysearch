@@ -2,6 +2,7 @@ local ui = require("onlysearch.ui")
 local kit = require("onlysearch.kit")
 local cfg = require("onlysearch.config")
 local query_hist = require("onlysearch.query_hist")
+local fmt = string.format
 
 local _M = { limit = {} }
 
@@ -78,17 +79,12 @@ end
 --- @param filename string
 --- @return string
 local gen_abs_path = function(cwd, filename)
-    local abs_path = nil
-    if string.sub(filename, 1, 1) == '/' then
-        abs_path = '' .. filename  -- deepcopy the string
-    else
-        cwd = cwd and cwd or vim.fn.getcwd()
-        filename = string.sub(filename, 1, 2) == './' and string.sub(filename, 3) or filename
-
-        abs_path = vim.fn.expand(cwd) .. '/' .. filename
+    local path = filename
+    if string.sub(path, 1, 1) ~= '/' then
+        path = fmt("%s/%s", cwd or vim.fn.getcwd(), filename)
     end
 
-    return abs_path
+    return kit.normalize_path(path)
 end
 
 --- @param lnum integer?

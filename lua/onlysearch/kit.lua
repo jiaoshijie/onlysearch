@@ -142,4 +142,8 @@ _M.modify_buf = function(bufnr, cb)
     vim.api.nvim_set_option_value("modifiable", false, opts)
 end
 
+_M.normalize_path = function(path)
+    return vim.fs.normalize(path, { expand_env = true, win = false })
+end
+
 return _M
