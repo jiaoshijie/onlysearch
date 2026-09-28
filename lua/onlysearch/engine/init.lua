@@ -121,7 +121,7 @@ local uv_shutdown = function(rt_ctx, abort)
     if not uv_ctx.pid then return end
     uv_ctx.pid = nil
 
-    if abort then
+    if abort and uv_ctx.handle then
         -- NOTE: since the handle will be closed upon this operation,
         -- the callback registered in uv.spawn will never be called.
         -- then I think using SIGKILL is more suitable.
@@ -262,6 +262,19 @@ _M.search = function(rt_ctx)
             end))
         end)
     )
+
+    if not uv_ctx.handle then
+        e_ctx.error_termed = true
+        if type(uv_ctx.pid) == "string" then
+            --- @diagnostic disable-next-line: param-type-mismatch
+            process_output(e_ctx,
+                fmt("plugin internal error(uv.spawn failed): %s\n", uv_ctx.pid),
+                false, stdout_or_stderr_cb)
+        end
+        rt_cb.on_finish(e_ctx.is_interrupted)
+        uv_shutdown(rt_ctx, true)
+        return
+    end
 
     uv.read_start(uv_ctx.stdout, vim.schedule_wrap(function(err, data)
         if data == nil then
