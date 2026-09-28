@@ -246,7 +246,15 @@ _M.search = function(rt_ctx)
             stdio = { nil, uv_ctx.stdout, uv_ctx.stderr },
             args = e_ctx.args,
             cwd = e_ctx.cwd,
-            env = { "GREP_COLORS=ms=0:mc=:sl=:cx=:fn=:ln=:bn=:se=:ne" },
+            env = {
+                "GREP_COLORS=ms=0:mc=:sl=:cx=:fn=:ln=:bn=:se=:ne",
+                "LANG=C",
+                "LC_ALL=C",
+                fmt("SHELL=%s", vim.o.shell),
+                fmt("USER=%s", vim.env.USER),
+                fmt("HOME=%s", vim.env.HOME),
+                fmt("PATH=%s", vim.env.PATH),
+            },
         }, vim.schedule_wrap(function(code, signal)
             kit.trace("uv.spawn on_exit()", e_ctx.cmd, code, signal, e_ctx.is_interrupted)
             if code ~= 0 or (signal ~= 0 and not e_ctx.is_interrupted) then
